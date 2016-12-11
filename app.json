@@ -1,0 +1,8 @@
+{
+  "name": "Eleos",
+  "description": "",
+  "image": "heroku/python",
+  "repository": "https://github.com/tayrobin/eleos",
+  "keywords": ["python", "django" ],
+  "addons": [ "heroku-postgresql" ]
+}
