@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Modules{% endblock %}
+
+{% block content %}
+  <link rel="stylesheet" type="text/css" href="{% static 'css/integrations_checkbox.css' %}" />
+  <div class="jumbotron">
+    <h1>Your Modules</h1>
+    <ul id="list-group">
+      {% for module in modules %}
+      <div class="container">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h3>{{ module.name }}</h3>
+            <p>{{ module.description }}</p>
+          </div>
+          <div class="panel-body">
+            <h4>Required Integrations</h4>
+            {% for integration in module.required_integrations.all %}
+              {% if user in integration.users.all %}
+                <div class="[ form-group ]">
+                    <input type="checkbox" name="fancy-checkbox-success" id="fancy-checkbox-success-{{integration.name}}" autocomplete="off" checked />
+                    <div class="[ btn-group ]">
+                        <label for="fancy-checkbox-success-{{integration.name}}"
+                          class="[ btn btn-success ]">
+                            <span class="[ glyphicon glyphicon-ok ]"></span>
+                            <span> </span>
+                        </label>
+                        <label for="fancy-checkbox-success-{{integration.name}}" class="[ btn btn-default active ]">
+                            {{ integration.name }}
+                        </label>
+                    </div>
+                </div>
+              {% else %}
+                <div class="[ form-group ]">
+                    <input type="checkbox" name="fancy-checkbox-success" id="fancy-checkbox-success-{{integration.name}}" autocomplete="off" />
+                    <div class="[ btn-group ]">
+                        <label for="fancy-checkbox-success-{{integration.name}}"
+                          class="[ btn btn-danger ]">
+                            <span class="[ glyphicon glyphicon-ok ]"></span>
+                            <span> </span>
+                        </label>
+                        <label for="fancy-checkbox-success-{{integration.name}}" class="[ btn btn-default active ]">
+                            <a href="{{ integration.auth_url }}">{{ integration.name }}</a>
+                        </label>
+                    </div>
+                </div>
+              {% endif %}
+            {% endfor %}
+            <h4>Possible Payloads</h4>
+            {% for payload in module.possible_payloads.all %}
+            <p>{{ payload }}</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </ul>
+  </div>
+{% endblock %}

@@ -6,20 +6,34 @@
 {% block content %}
   <link rel="stylesheet" type="text/css" href="{% static 'css/integrations_checkbox.css' %}" />
   <div class="jumbotron">
-    <h1>Your Active Integrations</h1>
+    <h1>Your Integrations</h1>
     <ul id="list-group">
-      {% for integration in integrations %}
+      {% for integration in activeIntegrations %}
         <div class="[ form-group ]">
-            <input type="checkbox" name="fancy-checkbox-success" id="fancy-checkbox-success-{{integration.name}}" autocomplete="off"
-            {% if integration.active %} checked {% endif %} />
+            <input type="checkbox" name="fancy-checkbox-success" id="fancy-checkbox-success-{{integration.name}}" autocomplete="off" checked />
             <div class="[ btn-group ]">
                 <label for="fancy-checkbox-success-{{integration.name}}"
-                  class="[ btn {% if integration.active %} btn-success {% else %} btn-danger {% endif %} ]">
+                  class="[ btn btn-success ]">
                     <span class="[ glyphicon glyphicon-ok ]"></span>
                     <span> </span>
                 </label>
                 <label for="fancy-checkbox-success-{{integration.name}}" class="[ btn btn-default active ]">
                     {{ integration.name }}
+                </label>
+            </div>
+        </div>
+      {% endfor %}
+      {% for integration in inactiveIntegrations %}
+        <div class="[ form-group ]">
+            <input type="checkbox" name="fancy-checkbox-success" id="fancy-checkbox-success-{{integration.name}}" autocomplete="off" />
+            <div class="[ btn-group ]">
+                <label for="fancy-checkbox-success-{{integration.name}}"
+                  class="[ btn btn-danger ]">
+                    <span class="[ glyphicon glyphicon-ok ]"></span>
+                    <span> </span>
+                </label>
+                <label for="fancy-checkbox-success-{{integration.name}}" class="[ btn btn-default active ]">
+                    <a href="{{ integration.auth_url }}">{{ integration.name }}</a>
                 </label>
             </div>
         </div>

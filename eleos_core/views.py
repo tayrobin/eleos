@@ -2,7 +2,7 @@ from django.urls import reverse
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
-from .models import Integration
+from .models import Integration, Module
 
 # Create your views here.
 def index(request):
@@ -10,8 +10,18 @@ def index(request):
 
 
 @login_required()
-def listUserIntegrations(request):
+def listIntegrations(request):
 
-    integrations = Integration.objects.all()
+    activeIntegrations = Integration.objects.filter(users=request.user)
+    inactiveIntegrations = Integration.objects.exclude(users=request.user)
 
-    return render(request, "integrations.html", {"integrations": integrations})
+    return render(request, "integrations.html", {"activeIntegrations": activeIntegrations,
+                                                 "inactiveIntegrations": inactiveIntegrations})
+
+
+@login_required()
+def listModules(request):
+
+    modules = Module.objects.all()
+
+    return render(request, "modules.html", {"modules": modules})

@@ -21,6 +21,9 @@ class Payload(models.Model):
     length = models.DurationField("The expected length of time Payload will fill.", null=True)
     deliverable = models.TextField(null=True)
 
+    class Meta:
+        ordering = ['length']
+
     def __str__(self):
         return "[%s] %s" % (self.length, self.name)
 

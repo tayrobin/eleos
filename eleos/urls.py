@@ -14,6 +14,7 @@ urlpatterns = [
     url(r'^accounts/login/$',   auth_views.login, {'template_name': 'login.html', 'authentication_form': LoginForm}, name='login'),
     url(r'^logout/$',           auth_views.logout, {'template_name': 'logged_out.html'}, name='logout'),
     url(r'^core/$',             eleos_core.views.index, name='core_index'),
-    url(r'^integrations/$',     eleos_core.views.listUserIntegrations, name='integrations'),
+    url(r'^integrations/$',     eleos_core.views.listIntegrations, name='integrations'),
+    url(r'^modules/$',          eleos_core.views.listModules, name='modules'),
     url(r'^admin/',             include(admin.site.urls)),
 ]
