@@ -9,19 +9,10 @@ class Integration(models.Model):
     """"A service that provides information on the User's daily schedule."""
     name = models.CharField(max_length=200, null=False)
     auth_url = models.TextField(null=True)
+    users = models.ManyToManyField(User, blank=True)
 
     def __str__(self):
         return self.name
-
-
-class UserIntegrationLink(models.Model):
-    """"A connection between a User and an Integration that serves as is_active."""
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    integration = models.OneToOneField(Integration, on_delete=models.CASCADE)
-    auth_token = models.TextField(null=True)
-
-    def __str__(self):
-        return "%s <--> %s" % (self.user.username, self.integration.name)
 
 
 class Payload(models.Model):
