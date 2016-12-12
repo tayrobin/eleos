@@ -19,7 +19,7 @@
                                     <span class="icon-bar"></span>
                                     <span class="icon-bar"></span>
                                 </button>
-                                <a class="navbar-brand" href="#">Rocky Balbo</a>
+                                <a class="navbar-brand" href="#">Eleos</a>
                             </div>
                             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                                 <ul class="nav navbar-nav navbar-right">
@@ -29,22 +29,22 @@
                                         </a>
                                         <ul class="dropdown-menu" role="menu">
                                             <li>
-                                                <a href="/home">home</a>
-                                            </li>
-                                            <li>
-                                                <a href="#">Another action</a>
-                                            </li>
-                                            <li>
-                                                <a href="#">Something else here</a>
+                                                <a href="/">Home</a>
                                             </li>
                                             <li class="divider"></li>
                                             <li>
-                                                <a href="#">Separated link</a>
+                                                <a href="/integrations">Integrations</a>
                                             </li>
                                             <li class="divider"></li>
+                                            {% if user.is_authenticated %}
                                             <li>
                                                 <a href="/logout">Logout</a>
                                             </li>
+                                            {% else %}
+                                            <li>
+                                                <a href="/login">Login</a>
+                                            </li>
+                                            {% endif %}
                                         </ul>
                                     </li>
                                 </ul>
