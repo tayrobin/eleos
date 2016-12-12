@@ -4,4 +4,15 @@
 
 {% block content %}
   <h2>Integrations</h2>
+  <div class="container">
+    <ul>
+      {% for integration in integrations %}
+        {% if not integration.active %}
+        <li>Give us your <a href={{ integration.link }}><span>{{ integration.name }}</span></a> account, please.</li>
+        {% else %}
+        <li>We already have your <a href={{ integration.link }}><span>{{ integration.name }}</span></a> account. Thanks!</li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </div>
 {% endblock %}

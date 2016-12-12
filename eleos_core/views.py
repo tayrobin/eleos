@@ -10,4 +10,10 @@ def index(request):
 
 @login_required()
 def listUserIntegrations(request):
-    return render(request,"integrations.html")
+    userIntegrations = [
+                        {"name":"Facebook", "active":False, "link":"https://www.facebook.com/v2.8/dialog/oauth?"},
+                        {"name":"Swarm", "active":True, "link":"https://foursquare.com/oauth2/authenticate"},
+                        {"name":"Google Maps", "active":False, "link":"https://accounts.google.com/o/oauth2/v2/auth"}
+                        ]
+
+    return render(request, "integrations.html", {"integrations": userIntegrations})
