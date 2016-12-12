@@ -128,8 +128,10 @@ USE_TZ = True
 
 #STATIC_URL = os.path.join(BASE_DIR, "staticfiles/")
 #STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles/")
-STATIC_ROOT = "/eleos/staticfiles/"
-STATIC_URL = "/eleos/staticfiles/"
+#STATIC_ROOT = "/eleos/staticfiles/"
+#STATIC_URL = "/eleos/staticfiles/"
+STATIC_URL = '/staticfiles/'
+STATIC_ROOT = '/staticfiles/'
 
 LOGIN_REDIRECT_URL = 'home'
 LOGIN_URL = '/login/'
