@@ -1,17 +1,37 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Integrations{% endblock %}
 
 {% block content %}
-  <h2>Integrations</h2>
-  <div class="container">
-    <ul>
+  <link rel="stylesheet" type="text/css" href="{% static 'css/integrations_checkbox.css' %}" />
+  <div class="jumbotron">
+    <h1>Your Active Integrations</h1>
+    <ul id="list-group">
       {% for integration in integrations %}
-        {% if not integration.active %}
-        <li>Give us your <a href={{ integration.link }}><span>{{ integration.name }}</span></a> account, please.</li>
-        {% else %}
-        <li>We already have your <a href={{ integration.link }}><span>{{ integration.name }}</span></a> account. Thanks!</li>
-        {% endif %}
+        <div class="[ form-group ]">
+            <input type="checkbox" name="fancy-checkbox-success" id="fancy-checkbox-success-{{integration.name}}" autocomplete="off"
+            {% if integration.active %}
+            checked
+            {% else %}
+            {% endif %}
+            />
+            <div class="[ btn-group ]">
+                <label for="fancy-checkbox-success-{{integration.name}}" class="[ btn
+                {% if integration.active %}
+                btn-success
+                {% else %}
+                btn-danger
+                {% endif %}
+                 ]">
+                    <span class="[ glyphicon glyphicon-ok ]"></span>
+                    <span> </span>
+                </label>
+                <label for="fancy-checkbox-success-{{integration.name}}" class="[ btn btn-default active ]">
+                    {{ integration.name }}
+                </label>
+            </div>
+        </div>
       {% endfor %}
     </ul>
   </div>
