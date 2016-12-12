@@ -33,7 +33,8 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    'eleos_core',
+    'eleos_core.apps.EleosCoreConfig',
+    #'eleos_core',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
