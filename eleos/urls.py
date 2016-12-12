@@ -11,5 +11,5 @@ urlpatterns = [
     url(r'^logout/$', auth_views.logout, {'template_name': 'logged_out.html'}, name='logout'),
     url(r'^core/$', eleos_core.views.index, name='core_index'),
     url(r'^integrations/$', eleos_core.views.listUserIntegrations, name='integrations'),
-    url(r'^admin/', admin.site.urls),
+    url(r'^admin/', include(admin.site.urls)),
 ]
