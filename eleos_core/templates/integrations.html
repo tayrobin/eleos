@@ -10,6 +10,7 @@
     <ul id="list-group">
       {% for integration in integrations %}
         <div class="[ form-group ]">
+          <a class="btn btn-danger" href="https://www.google.com">hi there</a>
             <input type="checkbox" name="fancy-checkbox-success" id="fancy-checkbox-success-{{integration.name}}" autocomplete="off"
             {% if integration.active %} checked {% endif %} />
             <div class="[ btn-group ]">
