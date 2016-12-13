@@ -20,5 +20,4 @@ urlpatterns = [
     url(r'^sendOAuth/(?P<integrationName>[\w]+)/$',     eleos_core.views.sendOAuth, name='sendOAuth'),
     url(r'^receiveOAuth/$',                             eleos_core.views.receiveOAuth, name='receiveOAuth'),
     url(r'^admin/',                                     include(admin.site.urls)),
-    #url(r'^test/',              TemplateView.as_view(template_name='test.html'), {'range':[1,2,3,4,5,6,7,8]}, name='test')
 ]
