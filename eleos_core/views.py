@@ -35,7 +35,8 @@ def listModules(request):
 @csrf_exempt
 def foursquareCheckin(request):
 
-    print request['GET']
+    data = request.POST
+    print data
     return HttpResponse(status=201)
 
 
