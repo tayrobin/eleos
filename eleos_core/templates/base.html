@@ -7,6 +7,7 @@
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Auth Demo</title>
                 <!-- Core CSS - Include with every page -->
+                <link href="{% static 'css/background.css' %}" rel="stylesheet">
                 <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
                 </head>
                 <body>
@@ -19,7 +20,7 @@
                                     <span class="icon-bar"></span>
                                     <span class="icon-bar"></span>
                                 </button>
-                                <a class="navbar-brand" href="#">Eleos</a>
+                                <a class="navbar-brand" href="/">Eleos</a>
                             </div>
                             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                                 <ul class="nav navbar-nav navbar-right">
@@ -34,6 +35,7 @@
                                             <li class="divider"></li>
                                             <li>
                                                 <a href="/integrations">Integrations</a>
+                                                <a href="/modules">Modules</a>
                                             </li>
                                             <li class="divider"></li>
                                             {% if user.is_authenticated %}
