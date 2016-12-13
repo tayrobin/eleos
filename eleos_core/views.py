@@ -17,11 +17,9 @@ def index(request):
 @login_required()
 def listIntegrations(request):
 
-    activeIntegrations = Integration.objects.filter(users=request.user)
-    inactiveIntegrations = Integration.objects.exclude(users=request.user)
+    integrations = Integration.objects.all()
 
-    return render(request, "integrations.html", {"activeIntegrations": activeIntegrations,
-                                                 "inactiveIntegrations": inactiveIntegrations})
+    return render(request, "integrations.html", {"integrations": integrations})
 
 
 @login_required()

@@ -1,43 +1,29 @@
 {% extends 'base.html' %}
 {% load static %}
-
-{% block title %}Integrations{% endblock %}
-
+{% block title %}Modules{% endblock %}
 {% block content %}
-  <link rel="stylesheet" type="text/css" href="{% static 'css/integrations_checkbox.css' %}" />
-  <div class="jumbotron">
-    <h1>Your Integrations</h1>
-    <ul id="list-group">
-      {% for integration in activeIntegrations %}
-        <div class="[ form-group ]">
-            <input type="checkbox" name="fancy-checkbox-success" id="fancy-checkbox-success-{{integration.name}}" autocomplete="off" checked />
-            <div class="[ btn-group ]">
-                <label for="fancy-checkbox-success-{{integration.name}}"
-                  class="[ btn btn-success ]">
-                    <span class="[ glyphicon glyphicon-ok ]"></span>
-                    <span> </span>
-                </label>
-                <label for="fancy-checkbox-success-{{integration.name}}" class="[ btn btn-default active ]">
-                    {{ integration.name }}
-                </label>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css" integrity="sha384-AysaV+vQoT3kOAXZkl02PThvDr8HYKPZhNT5h/CXfBThSRXQ6jW5DO2ekP5ViFdi" crossorigin="anonymous">
+<h1>Your Integrations</h1>
+<div class="container">
+    <div class="row">
+        {% for integration in integrations %}
+        <div class="col-md-5">
+            <div class="card">
+                <img class="card-img-top" src="{{ integration.image_url }}" alt="Card image cap" style="width:100%;height:200px;">
+                <div class="card-block">
+                    <h4 class="card-title">{{ integration.name }}</h4>
+                    <p class="card-text">{{ integration.description }}</p>
+                </div>
+                <div class="card-block">
+                    {% if user in integration.users.all %}
+                    <a href="#" class="btn btn-danger">Turn Off</a>
+                    {% else %}
+                    <a href="{{ integration.auth_url }}" class="btn btn-success">Turn On</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
-      {% endfor %}
-      {% for integration in inactiveIntegrations %}
-        <div class="[ form-group ]">
-            <input type="checkbox" name="fancy-checkbox-success" id="fancy-checkbox-success-{{integration.name}}" autocomplete="off" />
-            <div class="[ btn-group ]">
-                <label for="fancy-checkbox-success-{{integration.name}}"
-                  class="[ btn btn-danger ]">
-                    <span class="[ glyphicon glyphicon-ok ]"></span>
-                    <span> </span>
-                </label>
-                <label for="fancy-checkbox-success-{{integration.name}}" class="[ btn btn-default active ]">
-                    <a href="{% url 'sendOAuth' integrationName=integration.name %}">{{ integration.name }}</a>
-                </label>
-            </div>
-        </div>
-      {% endfor %}
-    </ul>
-  </div>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}
