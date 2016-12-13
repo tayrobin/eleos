@@ -34,7 +34,7 @@ def listModules(request):
 def foursquareCheckin(request):
 
     print request['GET']
-    return 'OK'
+    return HttpResponse(status=201)
 
 
 def sendOAuth(request, integrationName):
@@ -45,8 +45,9 @@ def sendOAuth(request, integrationName):
         return redirect('/')
     else:
         if integration.name == 'Swarm':
-            return redirect(integration.auth_url+"?"+"client_id="+os.environ['FOURSQUARE_CLIENT_ID']
-                                                +"&response_type=code"+"&redirect_uri="+"https://eleos-core.herokuapp.com/receiveOAuth")
+            return redirect(integration.auth_url, {"client_id":os.environ['FOURSQUARE_CLIENT_ID'],
+                                                    "response_type":"code",
+                                                    "redirect_uri":"https://eleos-core.herokuapp.com/receiveOAuth"})
         else:
             return redirect(integration.auth_url) # ++ params
 
@@ -62,13 +63,16 @@ def receiveOAuth(request):
 
         response = requests.get(integration.token_url, {"client_id":os.environ['FOURSQUARE_CLIENT_ID'],
                                                         "client_secret":os.environ['FOURSQUARE_CLIENT_SECRET'],
-                                                        "grant_type":"authorization_code", "redirect_uri":"https://eleos-core.herokuapp.com/receiveOAuth",
-                                                        "code":tempCode})
+                                                        "grant_type":"authorization_code", "code":tempCode,
+                                                        "redirect_uri":"https://eleos-core.herokuapp.com/receiveOAuth"})
 
         response = response.json()
         access_token = response['access_token']
 
-    # Create new Link and Store in DB
+    # Create new Link
     integration.users.add(request.user)
 
+    # Store access_token in DB
+
+    # send back to integrations
     return redirect('/integrations')
