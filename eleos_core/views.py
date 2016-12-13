@@ -1,6 +1,10 @@
+import os
+import requests
 from django.urls import reverse
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Integration, Module
 
@@ -25,3 +29,46 @@ def listModules(request):
     modules = Module.objects.all()
 
     return render(request, "modules.html", {"modules": modules})
+
+
+def foursquareCheckin(request):
+
+    print request['GET']
+    return 'OK'
+
+
+def sendOAuth(request, integrationName):
+
+    integration = get_object_or_404(Integration, name=integrationName)
+
+    if not integration.auth_url:
+        return redirect('/')
+    else:
+        if integration.name == 'Swarm':
+            return redirect(integration.auth_url+"?"+"client_id="+os.environ['FOURSQUARE_CLIENT_ID']
+                                                +"&response_type=code"+"&redirect_uri="+"https://eleos-core.herokuapp.com/receiveOAuth")
+        else:
+            return redirect(integration.auth_url) # ++ params
+
+
+def receiveOAuth(request):
+
+    # parse CODE
+    tempCode = request.GET['code']
+
+    # send to CODE<-->Auth_Token URL
+    if True:
+        integration = get_object_or_404(Integration, name='Swarm')
+
+        response = requests.get(integration.token_url, {"client_id":os.environ['FOURSQUARE_CLIENT_ID'],
+                                                        "client_secret":os.environ['FOURSQUARE_CLIENT_SECRET'],
+                                                        "grant_type":"authorization_code", "redirect_uri":"https://eleos-core.herokuapp.com/receiveOAuth",
+                                                        "code":tempCode})
+
+        response = response.json()
+        access_token = response['access_token']
+
+    # Create new Link and Store in DB
+    integration.users.add(request.user)
+
+    return redirect('/integrations')

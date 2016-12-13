@@ -33,7 +33,7 @@
                     <span> </span>
                 </label>
                 <label for="fancy-checkbox-success-{{integration.name}}" class="[ btn btn-default active ]">
-                    <a href="{{ integration.auth_url }}">{{ integration.name }}</a>
+                    <a href="{% url 'sendOAuth' integrationName=integration.name %}">{{ integration.name }}</a>
                 </label>
             </div>
         </div>

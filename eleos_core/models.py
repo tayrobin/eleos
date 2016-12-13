@@ -11,6 +11,7 @@ class Integration(models.Model):
     description = models.TextField(null=True)
     image_url = models.TextField(null=True)
     auth_url = models.TextField(null=True)
+    token_url = models.TextField(null=True)
     users = models.ManyToManyField(User, blank=True)
 
     def __str__(self):
