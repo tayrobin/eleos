@@ -61,6 +61,19 @@ def foursquareCheckin(request):
     return HttpResponse(status=201)
 
 
+def foursquareDetails(user, access_token):
+
+    # get user profile
+    response = requests.get('https://api.foursquare.com/v2/users/self', {'oauth_token':access_token, 'v':'20161212'})
+    data = response.json()
+    print user.username, "User Profile", data
+
+    # get checkin history
+    response = requests.get('https://api.foursquare.com/v2/users/self/checkins', {'oauth_token':access_token, 'v':'20161212'})
+    data = response.json()
+    print user.username, "Checkin History", data
+
+
 def sendOAuth(request, integrationName):
 
     integration = get_object_or_404(Integration, name=integrationName)
@@ -98,6 +111,9 @@ def receiveOAuth(request):
 
     # Store access_token in DB
     print request.user.username, "Swarm", access_token
+
+    # pull history
+    foursquareDetails(request.user, access_token)
 
     # send back to integrations
     return redirect('/integrations')
