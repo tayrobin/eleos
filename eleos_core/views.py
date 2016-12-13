@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Integration, Module
@@ -31,6 +32,7 @@ def listModules(request):
     return render(request, "modules.html", {"modules": modules})
 
 
+@csrf_exempt
 def foursquareCheckin(request):
 
     print request['GET']
