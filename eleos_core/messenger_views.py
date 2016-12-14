@@ -46,7 +46,10 @@ def dispatch(event):
     messageId = message['mid']
 
     messageText = message['text']
-    messageAttachments = message['attachments']
+    try:
+        messageAttachments = message['attachments']
+    except:
+        messageAttachments = None
 
     if messageText:
 
