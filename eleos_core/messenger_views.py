@@ -83,6 +83,7 @@ def receiveMessengerWebhook(request):
 
     elif request.method == 'POST':
         data = json.loads(request.body)
+        print data
 
         for entry in data:
             pageId = entry['id']
