@@ -94,6 +94,23 @@ def foursquareCheckin(request):
     return HttpResponse(status=201)
 
 
+@csrf_exempt
+def receiveMessengerWebhook(request):
+
+    data = request.GET
+    print "data", data
+    if 'challenge' in data:
+        challenge = data['challenge']
+    if 'verify_token' in data:
+        verify_token = data['verify_token']
+        if verify_token != "speak_friend_and_enter":
+            return HttpResponse(status=403)
+
+    url = "https://facebook.com"
+    response = requests.get(url, {'challenge':challenge})
+
+    return HttpResponse(status=201)
+
 def foursquareDetails(activeIntegration):
 
     # get user profile
@@ -150,7 +167,6 @@ def receiveOAuth(request):
 
     # Create new Link
     activeIntegration, new = ActiveIntegration.objects.get_or_create(user=request.user, integration=integration, access_token=access_token)
-
 
     # pull history
     if new and integration.name=='Swarm':
