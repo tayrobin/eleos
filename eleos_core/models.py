@@ -7,12 +7,12 @@ from django.contrib.auth.models import User
 
 class Integration(models.Model):
     """"A service that provides information on the User's daily schedule."""
-    name = models.CharField(max_length=200, null=False)
-    description = models.TextField(null=True)
-    image_url = models.TextField(null=True)
-    auth_url = models.TextField(null=True)
-    token_url = models.TextField(null=True)
-    users = models.ManyToManyField(User, blank=True)
+    name = models.CharField(max_length=200, blank=False)
+    description = models.TextField(blank=True, default=None)
+    image_url = models.TextField(blank=True, default=None)
+    auth_url = models.TextField(blank=True, default=None)
+    token_url = models.TextField(blank=True, default=None)
+    users = models.ManyToManyField(User, through='ActiveIntegration', blank=True)
 
     def __str__(self):
         return self.name
@@ -20,11 +20,11 @@ class Integration(models.Model):
 
 class Payload(models.Model):
     """"What gets delivered to the User in a Moment."""
-    name = models.CharField(max_length=200, null=False)
-    description = models.TextField(null=True)
-    image_url = models.TextField(null=True)
-    length = models.DurationField("The expected length of time Payload will fill.", null=True)
-    deliverable = models.TextField(null=True)
+    name = models.CharField(max_length=200, blank=False)
+    description = models.TextField(blank=True, default=None)
+    image_url = models.TextField(blank=True, default=None)
+    length = models.DurationField("The expected length of time, in seconds, Payload will fill.", blank=True, default=None)
+    deliverable = models.TextField(blank=True, default=None)
 
     class Meta:
         ordering = ['length']
@@ -35,12 +35,23 @@ class Payload(models.Model):
 
 class Module(models.Model):
     """"A grouping of Integrations that deliver a Payload."""
-    name = models.CharField(max_length=200, null=False)
-    description = models.TextField(null=True)
-    image_url = models.TextField(null=True)
+    name = models.CharField(max_length=200, blank=False)
+    description = models.TextField(blank=True, default=None)
+    image_url = models.TextField(blank=True, default=None)
     required_integrations = models.ManyToManyField(Integration, blank=True)
     possible_payloads = models.ManyToManyField(Payload, blank=True)
     users = models.ManyToManyField(User, blank=True)
 
     def __str__(self):
         return self.name
+
+
+class ActiveIntegration(models.Model):
+    """An active connection between a User and an Integration that they've authorized."""
+    user = models.ForeignKey(User)
+    integration = models.ForeignKey(Integration)
+    access_token = models.TextField(blank=True, default=None)
+    external_user_id = models.TextField("Unique ID of User in External Service.", blank=True, default=None)
+
+    def __str__(self):
+        return "%s <--> %s" % (self.user.username, self.integration.name)

@@ -7,3 +7,4 @@ from .models import *
 admin.site.register(Integration)
 admin.site.register(Module)
 admin.site.register(Payload)
+admin.site.register(ActiveIntegration)
