@@ -9,7 +9,11 @@ from django.views.generic.edit import CreateView, DeleteView
 from django.contrib.auth.forms import UserCreationForm
 
 urlpatterns = [
+    # basic
     url(r'^$',                                          TemplateView.as_view(template_name='home.html'), name='home'),
+
+    # test
+    url(r'^test/$',                                     eleos_core.views.showTest, name='test'),
 
     # register/login/logout
     url(r'^register/',                                  CreateView.as_view(template_name='register.html', form_class=SignupForm, success_url='/login'), name='register'),

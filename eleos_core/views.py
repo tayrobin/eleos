@@ -10,6 +10,13 @@ from django.contrib.auth.decorators import login_required
 from .models import Integration, Module, ActiveIntegration
 
 
+def showTest(request):
+
+    myDict = {'APP_ID': os.environ['FACEBOOK_APP_ID'], 'PAGE_ID': os.environ['PAGE_ACCESS_TOKEN']}
+
+    return render(request, 'test_messenger.html', myDict)
+
+
 @login_required()
 def listIntegrations(request):
 
