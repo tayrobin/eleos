@@ -106,7 +106,7 @@ def foursquareCheckin(request):
     "homeCity":"California","bio":"","contact":{"phone":"3178094648","verifiedPhone":"true",
     "email":"taylor.howard.robinson@gmail.com","twitter":"_t_rob"}}']}
     """
-    if data['user']['id'] == "147283036":
+    if data['checkin'][0]['user']['id'] == "147283036":
 
         # send intro message
         i = Integration.objects.get(name='Facebook')
