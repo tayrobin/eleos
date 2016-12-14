@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
-from .models import ActiveIntegration
+from .models import ActiveIntegration, Integration
 
 
 def callSendAPI(messageData):
@@ -129,8 +129,8 @@ def newMessengerUser(event):
     recipientId = event['recipient']['id']
     senderId = event['sender']['id']
     user = get_object_or_404(User, username=event['optin']['ref'])
-
-    activeIntegration, new = ActiveIntegration.objects.get_or_create(user=user, integration='Facebook', external_user_id=senderId)
+    integration = Integration.objects.get(name='Facebook')
+    activeIntegration, new = ActiveIntegration.objects.get_or_create(user=user, integration=integration, external_user_id=senderId)
 
     if new:
         # get an access_token ??
