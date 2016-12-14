@@ -69,6 +69,7 @@ def foursquareDetails(activeIntegration):
     try:
         user_id = data['response']['user']['id']
         activeIntegration.external_user_id = user_id
+        activeIntegration.save()
     except:
         print "Unable to parse User ID from response."
 
