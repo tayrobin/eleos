@@ -101,12 +101,12 @@ def receiveMessengerWebhook(request):
     print "data", data
 
     if 'hub.verify_token' in data:
-        verify_token = data['verify_token']
+        verify_token = data['hub.verify_token']
         if verify_token != "speak_friend_and_enter":
             return HttpResponse(status=403)
 
     if 'hub.challenge' in data:
-        challenge = data['challenge']
+        challenge = data['hub.challenge']
         return HttpResponse(challenge)
     else:
         return HttpResponse(status=403)
