@@ -18,10 +18,6 @@ def callSendAPI(messageData):
     print "Successfully sent generic message with id %s to recipient %s" % (messageId, recipientId)
 
 
-def sendGenericMessage(recipientId, messageText):
-    pass
-
-
 def sendTextMessage(recipientId, messageText):
 
     messageData = dict()
@@ -31,6 +27,10 @@ def sendTextMessage(recipientId, messageText):
     messageData['message']['text'] = messageText
 
     callSendAPI(messageData)
+
+
+def sendGenericMessage(recipientId, messageText):
+    sendTextMessage(recipientId, messageText)
 
 
 def dispatch(event):
@@ -57,7 +57,7 @@ def dispatch(event):
         # and send back the example. Otherwise, just echo the text we received.
 
         if 'generic' in messageText:
-            sendGenericMessage(senderId)
+            sendGenericMessage(senderId, "Blah blah blah")
 
         else:
             sendTextMessage(senderId, messageText)
