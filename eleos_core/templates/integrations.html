@@ -16,7 +16,7 @@
                 </div>
                 <div class="card-block">
                     {% if user in integration.users.all %}
-                    <a href="#" class="btn btn-danger">Turn Off</a>
+                    <a href="{% url 'deleteActiveIntegration' id=integration.id %}" class="btn btn-danger">Turn Off</a>
                     {% else %}
                     <a href="{% url 'sendOAuth' integrationName=integration.name %}" class="btn btn-success">Turn On</a>
                     {% endif %}

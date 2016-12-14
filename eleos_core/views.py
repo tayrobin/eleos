@@ -9,10 +9,6 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Integration, Module, ActiveIntegration
 
-# Create your views here.
-def index(request):
-    return HttpResponse("Hello, world. You're at the eleos_core index.")
-
 
 @login_required()
 def listIntegrations(request):
@@ -28,6 +24,15 @@ def listModules(request):
     modules = Module.objects.all()
 
     return render(request, "modules.html", {"modules": modules})
+
+
+@login_required()
+def deleteActiveIntegration(request, id):
+
+    activeIntegration = get_object_or_404(ActiveIntegration, integration=id, user=request.user)
+    activeIntegration.delete()
+
+    return redirect('/integrations')
 
 
 @csrf_exempt
@@ -94,6 +99,7 @@ def sendOAuth(request, integrationName):
             return redirect(integration.auth_url) # ++ params
 
 
+@login_required()
 def receiveOAuth(request):
 
     # parse CODE
