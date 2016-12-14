@@ -9,7 +9,7 @@ def callSendAPI(messageData):
 
     url = "https://graph.facebook.com/v2.6/me/messages"
 
-    response = request.post(url, json=messageData, qs={'access_token':os.environ['PAGE_ACCESS_TOKEN']})
+    response = requests.post(url, json=messageData, params={'access_token':os.environ['PAGE_ACCESS_TOKEN']})
     data = response.json()
 
     recipientId = data['recipient_id']
