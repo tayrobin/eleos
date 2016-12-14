@@ -11,25 +11,32 @@ from django.contrib.auth.forms import UserCreationForm
 urlpatterns = [
     url(r'^$',                                          TemplateView.as_view(template_name='home.html'), name='home'),
 
+    # register/login/logout
     url(r'^register/',                                  CreateView.as_view(template_name='register.html', form_class=SignupForm, success_url='/login'), name='register'),
     url(r'^login/$',                                    auth_views.login, {'template_name': 'login.html', 'authentication_form': LoginForm}, name='login'),
     url(r'^accounts/login/$',                           auth_views.login, {'template_name': 'login.html', 'authentication_form': LoginForm}, name='login'),
     url(r'^logout/$',                                   auth_views.logout, {'template_name': 'logged_out.html'}, name='logout'),
 
+    # standard site pages
     url(r'^integrations/$',                             eleos_core.views.listIntegrations, name='integrations'),
     url(r'^modules/$',                                  eleos_core.views.listModules, name='modules'),
 
-    url(r'^foursquare_checkin/$',                       eleos_core.views.foursquareCheckin, name='foursquareCheckin'),
-
-    url(r'^sendOAuth/(?P<integrationName>[\w]+)/$',     eleos_core.views.sendOAuth, name='sendOAuth'),
-    url(r'^receiveOAuth/$',                             eleos_core.views.receiveOAuth, name='receiveOAuth'),
-
-    url(r'^delete_active_integration/(?P<id>\d+)/$',    eleos_core.views.deleteActiveIntegration, name="deleteActiveIntegration"),
-
+    # module management
     url(r'^activate_module/(?P<id>\d+)/$',              eleos_core.views.activateModule, name="activateModule"),
     url(r'^deactivate_module/(?P<id>\d+)/$',            eleos_core.views.deactivateModule, name="deactivateModule"),
 
-    url(r'^receive_messenger_webhook/$',                eleos_core.messenger_views.receiveMessengerWebhook, name="receiveMessengerWebhook"),
+    # integration management
+    url(r'^delete_active_integration/(?P<name>\w+)/$',  eleos_core.views.deleteActiveIntegration, name="deleteActiveIntegration"),
+    url(r'^sendOAuth/(?P<integrationName>[\w]+)/$',     eleos_core.views.sendOAuth, name='sendOAuth'),
 
+    # swarm
+    url(r'^foursquare_checkin/$',                       eleos_core.views.foursquareCheckin, name='foursquareCheckin'),
+    url(r'^receiveOAuth/$',                             eleos_core.views.receiveOAuth, name='receiveOAuth'),
+
+    # facebook
+    url(r'^receive_messenger_webhook/$',                eleos_core.messenger_views.receiveMessengerWebhook, name="receiveMessengerWebhook"),
+    url(r'^receive_facebook_oauth/$',                   eleos_core.views.receiveFacebookOAuth, name='receiveFacebookOAuth'),
+
+    # admin stuff
     url(r'^admin/',                                     include(admin.site.urls)),
 ]

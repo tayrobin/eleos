@@ -27,9 +27,9 @@ def listModules(request):
 
 
 @login_required()
-def deleteActiveIntegration(request, id):
+def deleteActiveIntegration(request, name):
 
-    activeIntegration = get_object_or_404(ActiveIntegration, integration=id, user=request.user)
+    activeIntegration = get_object_or_404(ActiveIntegration, integration=name, user=request.user)
     activeIntegration.delete()
 
     return redirect('/integrations')
@@ -138,6 +138,44 @@ def receiveOAuth(request):
     # send to CODE<-->Auth_Token URL
     if True:
         integration = get_object_or_404(Integration, name='Swarm')
+
+        response = requests.get(integration.token_url, {"client_id":os.environ['FOURSQUARE_CLIENT_ID'],
+                                                        "client_secret":os.environ['FOURSQUARE_CLIENT_SECRET'],
+                                                        "grant_type":"authorization_code", "code":tempCode,
+                                                        "redirect_uri":"https://eleos-core.herokuapp.com/receiveOAuth"})
+
+        response = response.json()
+        access_token = response['access_token']
+        print request.user.username, integration.name, access_token
+
+    # Create new Link
+    activeIntegration, new = ActiveIntegration.objects.get_or_create(user=request.user, integration=integration, access_token=access_token)
+
+    # pull history
+    if new and integration.name=='Swarm':
+        foursquareDetails(activeIntegration)
+
+    # send back to integrations
+    return redirect('/integrations')
+
+
+@login_required()
+def receiveFacebookOAuth(request):
+
+    if request.method == 'GET':
+        print "GET", request.GET
+    elif request.method == 'POST':
+        print "POST", request.POST
+        print "DATA", request.body
+
+    return HttpResponse(status=201)
+
+    # parse CODE
+    tempCode = request.GET['code']
+
+    # send to CODE<-->Auth_Token URL
+    if True:
+        integration = get_object_or_404(Integration, name='Facebook')
 
         response = requests.get(integration.token_url, {"client_id":os.environ['FOURSQUARE_CLIENT_ID'],
                                                         "client_secret":os.environ['FOURSQUARE_CLIENT_SECRET'],
