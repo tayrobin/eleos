@@ -50,8 +50,8 @@ class ActiveIntegration(models.Model):
     """An active connection between a User and an Integration that they've authorized."""
     user = models.ForeignKey(User)
     integration = models.ForeignKey(Integration)
-    access_token = models.TextField(blank=True, default=None)
-    external_user_id = models.TextField("Unique ID of User in External Service.", blank=True, default=None)
+    access_token = models.TextField(blank=True, default=None, null=True)
+    external_user_id = models.TextField("Unique ID of User in External Service.", blank=True, default=None, null=True)
 
     def __str__(self):
         return "%s <--> %s" % (self.user.username, self.integration.name)
