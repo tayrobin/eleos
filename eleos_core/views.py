@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Integration, Module
+from .models import Integration, Module, ActiveIntegration
 
 # Create your views here.
 def index(request):
@@ -59,17 +59,23 @@ def foursquareCheckin(request):
     return HttpResponse(status=201)
 
 
-def foursquareDetails(user, access_token):
+def foursquareDetails(activeIntegration):
 
     # get user profile
-    response = requests.get('https://api.foursquare.com/v2/users/self', {'oauth_token':access_token, 'v':'20161212'})
+    response = requests.get('https://api.foursquare.com/v2/users/self', {'oauth_token':activeIntegration.access_token, 'v':'20161212'})
     data = response.json()
-    print user.username, "User Profile", data
+    print activeIntegration.user.username, "User Profile", data
+
+    try:
+        user_id = data['response']['user']['id']
+        activeIntegration.external_user_id = user_id
+    except:
+        print "Unable to parse User ID from response."
 
     # get checkin history
-    response = requests.get('https://api.foursquare.com/v2/users/self/checkins', {'oauth_token':access_token, 'v':'20161212'})
+    response = requests.get('https://api.foursquare.com/v2/users/self/checkins', {'oauth_token':activeIntegration.access_token, 'v':'20161212'})
     data = response.json()
-    print user.username, "Checkin History", data
+    print activeIntegration.user.username, "Checkin History", data
 
 
 def sendOAuth(request, integrationName):
@@ -103,15 +109,15 @@ def receiveOAuth(request):
 
         response = response.json()
         access_token = response['access_token']
+        print request.user.username, integration.name, access_token
 
     # Create new Link
-    integration.users.add(request.user)
+    activeIntegration, new = ActiveIntegration.objects.get_or_create(user=request.user, integration=integration, access_token=access_token)
 
-    # Store access_token in DB
-    print request.user.username, "Swarm", access_token
 
     # pull history
-    foursquareDetails(request.user, access_token)
+    if new and integration.name=='Swarm':
+        foursquareDetails(activeIntegration)
 
     # send back to integrations
     return redirect('/integrations')

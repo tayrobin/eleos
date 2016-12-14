@@ -21,7 +21,7 @@
                           {% if user in integration.users.all %}
                           <li class="list-group-item"><span class="[ glyphicon glyphicon-ok ]" style="color:green;"></span> - {{ integration.name }}</li>
                           {% else %}
-                          <li class="list-group-item"><span class="[ glyphicon glyphicon-remove ]" style="color:red;"></span> - <a href="{{ integration.auth_url }}">{{ integration.name }}</a></li>
+                          <li class="list-group-item"><span class="[ glyphicon glyphicon-remove ]" style="color:red;"></span> - <a href="{% url 'sendOAuth' integrationName=integration.name %}">{{ integration.name }}</a></li>
                           {% endif %}
                         {% endfor %}
                     </ul>

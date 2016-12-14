@@ -18,7 +18,7 @@
                     {% if user in integration.users.all %}
                     <a href="#" class="btn btn-danger">Turn Off</a>
                     {% else %}
-                    <a href="{{ integration.auth_url }}" class="btn btn-success">Turn On</a>
+                    <a href="{% url 'sendOAuth' integrationName=integration.name %}" class="btn btn-success">Turn On</a>
                     {% endif %}
                 </div>
             </div>
