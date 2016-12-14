@@ -75,6 +75,19 @@ def sendGenericMessage(recipientId):
     callSendAPI(messageData)
 
 
+def receivedPostback(event):
+
+    senderId = event['sender']['id']
+    recipientId = event['recipient']['id']
+    timeOfPostback = event['timestamp']
+
+    payload = event['postback']['payload']
+
+    print "Received postback for user %d and page %d with payload '%s' at %d" % (senderID, recipientID, payload, timeOfPostback)
+
+    sendTextMessage(senderID, "Postback called")
+
+
 def dispatch(event):
 
     senderId = event['sender']['id']
@@ -134,13 +147,11 @@ def receiveMessengerWebhook(request):
             timeOfEvent = entry['time']
 
             for event in entry['messaging']:
-                try:
-                    event_message = event['message']
-                except:
-                    event_message = None
 
-                if event_message:
+                if 'message' in event:
                     dispatch(event)
+                elif 'postback' in event:
+                    receivedPostback(event)
                 else:
                     print "Webhook received unknown event: ", event
 
