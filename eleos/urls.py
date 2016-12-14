@@ -1,4 +1,5 @@
 import eleos_core.views
+import eleos_core.messenger_views
 from django.contrib import admin
 from django.conf.urls import url, include
 from eleos_core.forms import LoginForm, SignupForm
@@ -28,7 +29,7 @@ urlpatterns = [
     url(r'^activate_module/(?P<id>\d+)/$',              eleos_core.views.activateModule, name="activateModule"),
     url(r'^deactivate_module/(?P<id>\d+)/$',            eleos_core.views.deactivateModule, name="deactivateModule"),
 
-    url(r'^receive_messenger_webhook/$',                eleos_core.views.receiveMessengerWebhook, name="receiveMessengerWebhook"),
+    url(r'^receive_messenger_webhook/$',                eleos_core.messenger_views.receiveMessengerWebhook, name="receiveMessengerWebhook"),
 
     url(r'^admin/',                                     include(admin.site.urls)),
 ]

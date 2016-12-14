@@ -94,25 +94,6 @@ def foursquareCheckin(request):
     return HttpResponse(status=201)
 
 
-@csrf_exempt
-def receiveMessengerWebhook(request):
-
-    data = request.GET
-    print "data", data
-
-    if 'hub.verify_token' in data:
-        verify_token = data['hub.verify_token']
-        if verify_token != "speak_friend_and_enter":
-            return HttpResponse(status=403)
-
-    if 'hub.challenge' in data:
-        challenge = data['hub.challenge']
-        return HttpResponse(challenge)
-    else:
-        return HttpResponse(status=403)
-
-
-
 def foursquareDetails(activeIntegration):
 
     # get user profile
