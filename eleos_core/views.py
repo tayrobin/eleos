@@ -36,7 +36,7 @@ def listModules(request):
 @login_required()
 def deleteActiveIntegration(request, name):
 
-    integration = Integration.objects.get(name=name)
+    integration = get_object_or_404(Integration, name=name)
     activeIntegration = get_object_or_404(ActiveIntegration, integration=integration, user=request.user)
     activeIntegration.delete()
 
@@ -133,6 +133,9 @@ def sendOAuth(request, integrationName):
             return redirect(integration.auth_url+"?"+"client_id="+os.environ['FOURSQUARE_CLIENT_ID']+
                                                     "&"+"response_type="+"code"+
                                                     "&"+"redirect_uri="+"https://eleos-core.herokuapp.com/receiveOAuth")
+        elif integration.name == 'Facebook':
+            return redirect(integration.auth_url+"?"+"app_id="+os.environ['FACEBOOK_APP_ID']+
+                                                    "&"+"redirect_uri="+"https://eleos-core.herokuapp.com/receive_facebook_oauth")
         else:
             return redirect(integration.auth_url) # ++ params
 
@@ -176,30 +179,25 @@ def receiveFacebookOAuth(request):
         print "POST", request.POST
         print "DATA", request.body
 
-    return HttpResponse(status=201)
-
     # parse CODE
     tempCode = request.GET['code']
 
     # send to CODE<-->Auth_Token URL
-    if True:
-        integration = get_object_or_404(Integration, name='Facebook')
+    integration = get_object_or_404(Integration, name='Facebook')
 
-        response = requests.get(integration.token_url, {"client_id":os.environ['FOURSQUARE_CLIENT_ID'],
-                                                        "client_secret":os.environ['FOURSQUARE_CLIENT_SECRET'],
-                                                        "grant_type":"authorization_code", "code":tempCode,
-                                                        "redirect_uri":"https://eleos-core.herokuapp.com/receiveOAuth"})
+    response = requests.get(integration.token_url, {"client_id":os.environ['FACEBOOK_APP_ID'],
+                                                    "client_secret":os.environ['FACEBOOK_APP_SECRET'],
+                                                    "code":tempCode,
+                                                    "redirect_uri":"https://eleos-core.herokuapp.com/receive_facebook_oauth"})
 
-        response = response.json()
-        access_token = response['access_token']
-        print request.user.username, integration.name, access_token
+    response = response.json()
+    access_token = response['access_token']
+    print request.user.username, integration.name, access_token
 
     # Create new Link
-    activeIntegration, new = ActiveIntegration.objects.get_or_create(user=request.user, integration=integration, access_token=access_token)
-
-    # pull history
-    if new and integration.name=='Swarm':
-        foursquareDetails(activeIntegration)
+    activeIntegration, new = ActiveIntegration.objects.get_or_create(user=request.user, integration=integration)
+    activeIntegration.access_token = access_token
+    activeIntegration.save()
 
     # send back to integrations
     return redirect('/integrations')
