@@ -107,7 +107,7 @@ def receiveMessengerWebhook(request):
 
     if 'hub.challenge' in data:
         challenge = data['challenge']
-        return HttpResponse(status=201, {'challenge':challenge})
+        return HttpResponse(challenge)
     else:
         return HttpResponse(status=403)
 
