@@ -1,4 +1,5 @@
 import os
+import json
 import requests
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -17,16 +18,16 @@ def callSendAPI(messageData):
     print "Successfully sent generic message with id %s to recipient %s" % (messageId, recipientId)
 
 
-def sendGenericMessage(recipientID, messageText):
+def sendGenericMessage(recipientId, messageText):
     pass
 
 
-def sendTextMessage(recipientID, messageText):
+def sendTextMessage(recipientId, messageText):
 
     messageData = dict()
     messageData['recipient'] = dict()
     messageData['message'] = dict()
-    messageData['recipient']['id'] = recipientID
+    messageData['recipient']['id'] = recipientId
     messageData['message']['text'] = messageText
 
     callSendAPI(messageData)
@@ -34,12 +35,12 @@ def sendTextMessage(recipientID, messageText):
 
 def dispatch(event):
 
-    senderID = event['sender']['id']
-    recipientID = event['recipient']['id']
+    senderId = event['sender']['id']
+    recipientId = event['recipient']['id']
     timeOfMessage = event['timestamp']
     message = event['message']
 
-    print "Received message for user %s and page %s at %s with message:" % (senderID, recipientID, timeOfMessage)
+    print "Received message for user %s and page %s at %s with message:" % (senderId, recipientId, timeOfMessage)
     print message
 
     messageId = message['mid']
@@ -53,13 +54,13 @@ def dispatch(event):
         # and send back the example. Otherwise, just echo the text we received.
 
         if 'generic' in messageText:
-            sendGenericMessage(senderID)
+            sendGenericMessage(senderId)
 
         else:
-            sendTextMessage(senderID, messageText)
+            sendTextMessage(senderId, messageText)
 
     elif messageAttachments:
-        sendTextMessage(senderID, "Message with attachment received")
+        sendTextMessage(senderId, "Message with attachment received")
 
 
 @csrf_exempt
@@ -81,7 +82,7 @@ def receiveMessengerWebhook(request):
             return HttpResponse(status=403)
 
     elif request.method == 'POST':
-        data = request.body
+        data = json.loads(request.body)
 
         for entry in data:
             pageId = entry['id']
