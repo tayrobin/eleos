@@ -35,6 +35,36 @@ def deleteActiveIntegration(request, id):
     return redirect('/integrations')
 
 
+@login_required()
+def activateModule(request, id):
+
+    module = get_object_or_404(Module, id=id)
+
+    if request.user in module.users.all():
+        pass
+    else:
+        for integration in module.required_integrations.all():
+            if request.user not in integration.users.all():
+                return redirect('/integrations')
+
+        module.users.add(request.user)
+
+    return redirect('/modules')
+
+
+@login_required()
+def deactivateModule(request, id):
+
+    module = get_object_or_404(Module, id=id)
+
+    if request.user not in module.users.all():
+        pass
+    else:
+        module.users.remove(request.user)
+
+    return redirect('/modules')
+
+
 @csrf_exempt
 def foursquareCheckin(request):
 

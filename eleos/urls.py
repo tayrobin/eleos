@@ -25,5 +25,8 @@ urlpatterns = [
 
     url(r'^delete_active_integration/(?P<id>\d+)/$',    eleos_core.views.deleteActiveIntegration, name="deleteActiveIntegration"),
 
+    url(r'^activate_module/(?P<id>\d+)/$',              eleos_core.views.activateModule, name="activateModule"),
+    url(r'^deactivate_module/(?P<id>\d+)/$',            eleos_core.views.deactivateModule, name="deactivateModule"),
+
     url(r'^admin/',                                     include(admin.site.urls)),
 ]

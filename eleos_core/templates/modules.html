@@ -36,9 +36,9 @@
                 </div>
                 <div class="card-block">
                     {% if user in module.users.all %}
-                    <a href="#" class="btn btn-danger">Turn Off</a>
+                    <a href="{% url 'deactivateModule' id=module.id %}" class="btn btn-danger">Turn Off</a>
                     {% else %}
-                    <a href="#" class="btn btn-success">Turn On</a>
+                    <a href="{% url 'activateModule' id=module.id %}" class="btn btn-success">Turn On</a>
                     {% endif %}
                 </div>
             </div>
