@@ -83,7 +83,7 @@ def receivedPostback(event):
 
     payload = event['postback']['payload']
 
-    print "Received postback for user %d and page %d with payload '%s' at %d" % (senderId, recipientId, payload, timeOfPostback)
+    print "Received postback for user %s and page %s with payload '%s' at %s" % (senderId, recipientId, payload, timeOfPostback)
 
     sendTextMessage(senderId, "Postback called")
 
