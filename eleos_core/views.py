@@ -36,7 +36,8 @@ def listModules(request):
 @login_required()
 def deleteActiveIntegration(request, name):
 
-    activeIntegration = get_object_or_404(ActiveIntegration, integration=name, user=request.user)
+    integration = Integration.objects.get(name=name)
+    activeIntegration = get_object_or_404(ActiveIntegration, integration=integration, user=request.user)
     activeIntegration.delete()
 
     return redirect('/integrations')
