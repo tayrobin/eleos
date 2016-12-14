@@ -99,17 +99,19 @@ def receiveMessengerWebhook(request):
 
     data = request.GET
     print "data", data
-    if 'challenge' in data:
-        challenge = data['challenge']
-    if 'verify_token' in data:
+
+    if 'hub.verify_token' in data:
         verify_token = data['verify_token']
         if verify_token != "speak_friend_and_enter":
             return HttpResponse(status=403)
 
-    url = "https://facebook.com"
-    response = requests.get(url, {'challenge':challenge})
+    if 'hub.challenge' in data:
+        challenge = data['challenge']
+        return HttpResponse(status=201, {'challenge':challenge})
+    else:
+        return HttpResponse(status=403)
 
-    return HttpResponse(status=201)
+
 
 def foursquareDetails(activeIntegration):
 
