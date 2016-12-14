@@ -83,9 +83,8 @@ def receiveMessengerWebhook(request):
 
     elif request.method == 'POST':
         data = json.loads(request.body)
-        print data
 
-        for entry in data:
+        for entry in data['entry']:
             pageId = entry['id']
             timeOfEvent = entry['time']
 
