@@ -12,9 +12,9 @@ from .models import Integration, Module, ActiveIntegration
 
 def showTest(request):
 
-    myDict = {'APP_ID': os.environ['FACEBOOK_APP_ID'], 'PAGE_ID': os.environ['PAGE_ACCESS_TOKEN']}
-
-    return render(request, 'test_messenger.html', myDict)
+    #myDict = {'APP_ID': os.environ['FACEBOOK_APP_ID'], 'PAGE_ID': os.environ['FACEBOOK_PAGE_ID']}
+    pass
+    #return render(request, 'test_messenger.html', myDict)
 
 
 @login_required()
@@ -22,7 +22,7 @@ def listIntegrations(request):
 
     integrations = Integration.objects.all()
 
-    return render(request, "integrations.html", {"integrations": integrations})
+    return render(request, "integrations.html", {"integrations": integrations, 'APP_ID': os.environ['FACEBOOK_APP_ID'], 'PAGE_ID': os.environ['FACEBOOK_PAGE_ID']})
 
 
 @login_required()

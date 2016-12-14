@@ -2,7 +2,10 @@ import os
 import json
 import requests
 from django.http import HttpResponse
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
+from .models import ActiveIntegration
 
 
 def callSendAPI(messageData):
@@ -121,6 +124,23 @@ def dispatch(event):
         sendTextMessage(senderId, "Message with attachment received")
 
 
+def newMessengerUser(event):
+
+    recipientId = event['recipient']['id']
+    senderId = event['sender']['id']
+    user = get_object_or_404(User, username=event['optin']['ref'])
+
+    activeIntegration, new = ActiveIntegration.objects.get_or_create(user=user, integration='Facebook', external_user_id=senderId)
+
+    if new:
+        # get an access_token ??
+        sendTextMessage(senderId, "Welcome!")
+    else:
+        # already existed
+        sendTextMessage(senderId, "We meet again..")
+
+
+
 @csrf_exempt
 def receiveMessengerWebhook(request):
 
@@ -152,6 +172,8 @@ def receiveMessengerWebhook(request):
                     dispatch(event)
                 elif 'postback' in event:
                     receivedPostback(event)
+                elif 'optin' in event:
+                    newMessengerUser(event)
                 else:
                     print "Webhook received unknown event: ", event
 
