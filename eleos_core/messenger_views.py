@@ -134,7 +134,12 @@ def receiveMessengerWebhook(request):
             timeOfEvent = entry['time']
 
             for event in entry['messaging']:
-                if event['message']:
+                try:
+                    event_message = event['message']
+                except:
+                    event_message = None
+
+                if event_message:
                     dispatch(event)
                 else:
                     print "Webhook received unknown event: ", event
