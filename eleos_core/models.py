@@ -8,10 +8,10 @@ from django.contrib.auth.models import User
 class Integration(models.Model):
     """"A service that provides information on the User's daily schedule."""
     name = models.CharField(max_length=200, blank=False)
-    description = models.TextField(blank=True, default=None)
-    image_url = models.TextField(blank=True, default=None)
-    auth_url = models.TextField(blank=True, default=None)
-    token_url = models.TextField(blank=True, default=None)
+    description = models.TextField(blank=True, default=None, null=True)
+    image_url = models.TextField(blank=True, default=None, null=True)
+    auth_url = models.TextField(blank=True, default=None, null=True)
+    token_url = models.TextField(blank=True, default=None, null=True)
     users = models.ManyToManyField(User, through='ActiveIntegration', blank=True)
 
     def __str__(self):
@@ -21,10 +21,10 @@ class Integration(models.Model):
 class Payload(models.Model):
     """"What gets delivered to the User in a Moment."""
     name = models.CharField(max_length=200, blank=False)
-    description = models.TextField(blank=True, default=None)
-    image_url = models.TextField(blank=True, default=None)
-    length = models.DurationField("The expected length of time, in seconds, Payload will fill.", blank=True, default=None)
-    deliverable = models.TextField(blank=True, default=None)
+    description = models.TextField(blank=True, default=None, null=True)
+    image_url = models.TextField(blank=True, default=None, null=True)
+    length = models.DurationField("The expected length of time, in seconds, Payload will fill.", blank=True, default=None, null=True)
+    deliverable = models.TextField(blank=True, default=None, null=True)
 
     class Meta:
         ordering = ['length']
@@ -36,8 +36,9 @@ class Payload(models.Model):
 class Module(models.Model):
     """"A grouping of Integrations that deliver a Payload."""
     name = models.CharField(max_length=200, blank=False)
-    description = models.TextField(blank=True, default=None)
-    image_url = models.TextField(blank=True, default=None)
+    description = models.TextField(blank=True, default=None, null=True)
+    image_url = models.TextField(blank=True, default=None, null=True)
+    intro_message = models.TextField(blank=True, default=None, null=True)
     required_integrations = models.ManyToManyField(Integration, blank=True)
     possible_payloads = models.ManyToManyField(Payload, blank=True)
     users = models.ManyToManyField(User, blank=True)

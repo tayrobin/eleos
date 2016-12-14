@@ -22,7 +22,7 @@ def callSendAPI(messageData):
     print "Successfully sent generic message with id %s to recipient %s" % (messageId, recipientId)
 
 
-def sendTextMessage(recipientId, messageText):
+def sendMessenger(recipientId, messageText):
 
     messageData = {'recipient': {'id': recipientId},
         'message': {'text': messageText}}
@@ -88,7 +88,7 @@ def receivedPostback(event):
 
     print "Received postback for user %s and page %s with payload '%s' at %s" % (senderId, recipientId, payload, timeOfPostback)
 
-    sendTextMessage(senderId, "Postback called")
+    sendMessenger(senderId, "Postback called")
 
 
 def dispatch(event):
@@ -118,10 +118,10 @@ def dispatch(event):
             sendGenericMessage(senderId)
 
         else:
-            sendTextMessage(senderId, messageText)
+            sendMessenger(senderId, messageText)
 
     elif messageAttachments:
-        sendTextMessage(senderId, "Message with attachment received")
+        sendMessenger(senderId, "Message with attachment received")
 
 
 def newMessengerUser(event):
@@ -130,15 +130,17 @@ def newMessengerUser(event):
     senderId = event['sender']['id']
     user = get_object_or_404(User, username=event['optin']['ref'])
     integration = Integration.objects.get(name='Facebook')
-    activeIntegration, new = ActiveIntegration.objects.get_or_create(user=user, integration=integration, external_user_id=senderId)
+    activeIntegration, new = ActiveIntegration.objects.get_or_create(user=user, integration=integration)
+    if not activeIntegration.external_user_id:
+        activeIntegration.external_user_id = senderId
+        activeIntegration.save()
 
     if new:
         # get an access_token ??
-        sendTextMessage(senderId, "Welcome!")
+        sendMessenger(senderId, "Welcome!")
     else:
         # already existed
-        sendTextMessage(senderId, "We meet again..")
-
+        sendMessenger(senderId, "We meet again..")
 
 
 @csrf_exempt

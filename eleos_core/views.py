@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Integration, Module, ActiveIntegration
+from .messenger_views import sendMessenger
 
 
 def showTest(request):
@@ -57,6 +58,12 @@ def activateModule(request, id):
 
         module.users.add(request.user)
 
+        # send intro message
+        i = Integration.objects.get(name='Facebook')
+        ai = ActiveIntegration.objects.get(user=request.user, integration=i)
+        if ai.external_user_id:
+            sendMessenger(recipientId=ai.external_user_id, messageText=module.intro_message)
+
     return redirect('/modules')
 
 
@@ -99,6 +106,17 @@ def foursquareCheckin(request):
     "homeCity":"California","bio":"","contact":{"phone":"3178094648","verifiedPhone":"true",
     "email":"taylor.howard.robinson@gmail.com","twitter":"_t_rob"}}']}
     """
+    if data['user']['id'] == "147283036":
+
+        # send intro message
+        i = Integration.objects.get(name='Facebook')
+        try:
+            ai = ActiveIntegration.objects.get(user=request.user, integration=i)
+            if ai.external_user_id:
+                sendMessenger(recipientId=ai.external_user_id, messageText="Nice check in at %s!"%data['checkin'][0]['venue']['name'])
+        except:
+            return HttpResponse(status=201)
+
     return HttpResponse(status=201)
 
 
@@ -196,8 +214,9 @@ def receiveFacebookOAuth(request):
 
     # Create new Link
     activeIntegration, new = ActiveIntegration.objects.get_or_create(user=request.user, integration=integration)
-    activeIntegration.access_token = access_token
-    activeIntegration.save()
+    if not activeIntegration.access_token:
+        activeIntegration.access_token = access_token
+        activeIntegration.save()
 
     # send back to integrations
     return redirect('/integrations')
