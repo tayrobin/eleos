@@ -25,7 +25,7 @@ def callSendAPI(messageData):
 def sendMessenger(recipientId, messageText):
 
     messageData = {'recipient': {'id': recipientId},
-        'message': {'text': messageText}}
+                   'message': {'text': messageText}}
 
     callSendAPI(messageData)
 
@@ -50,12 +50,12 @@ def sendGenericMessage(recipientId):
                             'type': "web_url",
                             'url': "https://www.oculus.com/en-us/rift/",
                             'title': "Open Web URL"
-                            }, {
+                        }, {
                             'type': "postback",
                             'title': "Call Postback",
                             'payload': "Payload for first bubble",
-                            }],
-                        }, {
+                        }],
+                    }, {
                         'title': "touch",
                         'subtitle': "Your Hands, Now in VR",
                         'item_url': "https://www.oculus.com/en-us/touch/",
@@ -64,16 +64,16 @@ def sendGenericMessage(recipientId):
                             'type': "web_url",
                             'url': "https://www.oculus.com/en-us/touch/",
                             'title': "Open Web URL"
-                            }, {
+                        }, {
                             'type': "postback",
                             'title': "Call Postback",
                             'payload': "Payload for second bubble",
-                            }]
                         }]
-                    }
+                    }]
                 }
             }
         }
+    }
 
     callSendAPI(messageData)
 
@@ -94,33 +94,30 @@ def receivedPostback(event):
 def dispatch(event):
 
     senderId = event['sender']['id']
+
+    try:
+        ai = ActiveIntegration.objects.get(external_user_id=senderId)
+    except:
+        ai = None
+
     recipientId = event['recipient']['id']
     timeOfMessage = event['timestamp']
     message = event['message']
 
-    print "Received message for user %s and page %s at %s with message:" % (senderId, recipientId, timeOfMessage)
+    print "Received message from user %s:" % (ai.user if ai else senderId)
     print message
 
     messageId = message['mid']
 
-    messageText = message['text']
-    try:
-        messageAttachments = message['attachments']
-    except:
-        messageAttachments = None
+    if 'text' in message:
 
-    if messageText:
-
-        # If we receive a text message, check to see if it matches a keyword
-        # and send back the example. Otherwise, just echo the text we received.
-
-        if 'generic' in messageText:
+        if 'generic' in message['text']:
             sendGenericMessage(senderId)
 
         else:
-            sendMessenger(senderId, messageText)
+            sendMessenger(senderId, message['text'])
 
-    elif messageAttachments:
+    elif 'attachments' in message:
         sendMessenger(senderId, "Message with attachment received")
 
 
@@ -130,7 +127,8 @@ def newMessengerUser(event):
     senderId = event['sender']['id']
     user = get_object_or_404(User, username=event['optin']['ref'])
     integration = Integration.objects.get(name='Facebook')
-    activeIntegration, new = ActiveIntegration.objects.get_or_create(user=user, integration=integration)
+    activeIntegration, new = ActiveIntegration.objects.get_or_create(
+        user=user, integration=integration)
     if not activeIntegration.external_user_id:
         activeIntegration.external_user_id = senderId
         activeIntegration.save()
