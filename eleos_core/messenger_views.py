@@ -159,7 +159,7 @@ def newMessengerUser(event):
                                                                             'buttons': [{
                                                                                 'type': "postback",
                                                                                 'title': "Activate Module",
-                                                                                'payload': "activate_module_id_"+module.id,
+                                                                                'payload': "activate_module_id_"+str(module.id),
                                                                             }]})
 
         callSendAPI(messageData)
