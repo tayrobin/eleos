@@ -87,35 +87,17 @@ def foursquareCheckin(request):
     print "dataDict", dataDict
     dataJson = json.loads(request.POST)
     print "dataJson", dataJson
-    """
-    {u'checkin': [u'{"id":"584fb810dad26340511f798c","createdAt":1481619472,"type":"checkin",
-    "timeZone":"America\\/Los_Angeles","timeZoneOffset":-480,"user":{"id":"147283036",
-    "firstName":"Taylor","lastName":"Robinson","gender":"male","relationship":"self",
-    "photo":"https:\\/\\/irs3.4sqi.net\\/img\\/user\\/110\\/147283036-QD54DS4RIHBQWNU2.jpg"},
-    "venue":{"id":"4f6c317de4b08a0bb8f4e65a","name":"Silicon Valley","contact":{},
-    "location":{"lat":37.37433343892376,"lng":-121.9569512394378,"labeledLatLngs":[{"label":"display",
-    "lat":37.37433343892376,"lng":-121.9569512394378}],"postalCode":"95051","cc":"US",
-    "city":"Santa Clara","state":"CA","country":"United States","formattedAddress":["Santa Clara, CA 95051"]},
-    "categories":[{"id":"4bf58dd8d48988d162941735","name":"Other Great Outdoors",
-    "pluralName":"Other Great Outdoors","shortName":"Other Outdoors",
-    "icon":"https:\\/\\/ss3.4sqi.net\\/img\\/categories\\/parks_outdoors\\/default.png",
-    "parents":["Outdoors & Recreation"],"primary":true}],"verified":false,"stats":{"checkinsCount":3114,
-    "usersCount":1224,"tipCount":4},"venueRatingBlacklisted":true,"beenHere":{"lastCheckinExpiredAt":0}}}'],
-    u'secret': [u'0BJPRG1FEG02NBS10SFLZDLW14LGHHZHFNILLM2TEGUXIVD0'], u'user': [u'{"id":"147283036",
-    "firstName":"Taylor","lastName":"Robinson","gender":"male","relationship":"self",
-    "photo":"https:\\/\\/irs3.4sqi.net\\/img\\/user\\/110\\/147283036-QD54DS4RIHBQWNU2.jpg",
-    "tips":{"count":0},"lists":{"groups":[{"type":"created","count":2,"items":[]}]},
-    "homeCity":"California","bio":"","contact":{"phone":"3178094648","verifiedPhone":"true",
-    "email":"taylor.howard.robinson@gmail.com","twitter":"_t_rob"}}']}
-    """
+
     if dataDict['checkin'][0]['user']['id'] == "147283036":
 
         # send intro message
-        i = Integration.objects.get(name='Facebook')
+        facebook = Integration.objects.get(name='Facebook')
+        swarm = Integration.objects.get(name='Swarm')
         try:
-            ai = ActiveIntegration.objects.get(user=request.user, integration=i)
-            if ai.external_user_id:
-                sendMessenger(recipientId=ai.external_user_id, messageText="Nice check in at %s!"%dataDict['checkin'][0]['venue']['name'])
+            ai_swarm = ActiveIntegration.objects.get(external_user_id=dataDict['checkin'][0]['user']['id'], integration=swarm)
+            ai_facebook = ActiveIntegration.objects.get(user=ai_swarm.user, integration=facebook)
+            if ai_facebook:
+                sendMessenger(recipientId=ai_facebook.external_user_id, messageText="Nice check in at %s!"%dataDict['checkin'][0]['venue']['name'])
         except:
             return HttpResponse(status=201)
 
