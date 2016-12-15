@@ -174,6 +174,12 @@ def receiveMessengerWebhook(request):
                     receivedPostback(event)
                 elif 'optin' in event:
                     newMessengerUser(event)
+                elif 'read' in event:
+                    try:
+                        ai_fb = ActiveIntegration.objects.get(external_user_id=event['sender']['id'])
+                        print "%s has read my message ID: %s." % (ai_fb.user, event['read']['watermark'])
+                    except:
+                        print "Message recevied from unknown User."
                 else:
                     print "Webhook received unknown event: ", event
 
