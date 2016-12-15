@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
-from .models import ActiveIntegration, Integration
+from .models import ActiveIntegration, Integration, Module
 
 
 def callSendAPI(messageData):
@@ -123,19 +123,46 @@ def dispatch(event):
 
 def newMessengerUser(event):
 
-    recipientId = event['recipient']['id']
     senderId = event['sender']['id']
-    user = get_object_or_404(User, username=event['optin']['ref'])
+
+    try:
+        user = User.objects.get(username=event['optin']['ref'])
+    except:
+        print "Unable to fetch User."
+
     integration = Integration.objects.get(name='Facebook')
     activeIntegration, new = ActiveIntegration.objects.get_or_create(
         user=user, integration=integration)
+
     if not activeIntegration.external_user_id:
         activeIntegration.external_user_id = senderId
         activeIntegration.save()
 
     if new:
-        # get an access_token ??
-        sendMessenger(senderId, "Welcome!")
+        # ONBOARDING
+        sendMessenger(senderId, "Welcome to Eleos! We're here to serve you.  Please pick a Module to get started:")
+        availableModules = Module.objects.all()
+        messageData = {"recipient": {"id": senderId},
+                       'message': {
+                            'attachment': {
+                                'type': "template",
+                                'payload': {
+                                    'template_type': "generic",
+                                    'elements': []
+                                    }}}}
+        for module in availableModules:
+            messageData['message']['attachment']['payload']['elements'].append({
+                                                                            'title': module.name,
+                                                                            'subtitle': module.description,
+                                                                            'item_url': "https://eleos-core.herokuapp.com/modules",
+                                                                            'image_url': module.image_url,
+                                                                            'buttons': [{
+                                                                                'type': "postback",
+                                                                                'title': "Activate Module",
+                                                                                'payload': "activate_module_id_"+module.id,
+                                                                            }]})
+
+        callSendAPI(messageData)
     else:
         # already existed
         sendMessenger(senderId, "We meet again..")
