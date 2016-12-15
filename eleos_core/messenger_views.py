@@ -89,6 +89,7 @@ def receivedPostback(event):
     except:
         print "Unable to find User with external_user_id %s. (postback: '%s')" % (senderId, payload)
         sendMessenger(senderId, "I seem to have misplaced your User Account.  Can you please visit https://eleos-core.herokuapp.com/modules to get it sorted out?")
+        return
 
     print "Received postback for user %s with payload '%s' at %s" % (ai_fb.user, payload, timeOfPostback)
 
@@ -104,15 +105,19 @@ def receivedPostback(event):
         if user in module.users.all():
             print "User already enabled this Module."
             sendMessenger(senderId, "You've already enabled this Module.")
+            return
         else:
             for integration in module.required_integrations.all():
                 if user not in integration.users.all():
                     # User hasn't enabled all necessary permissions
                     sendMessenger(senderId, "You have not enabled all the necessary permissions for this Module.  Please visit https://eleos-core.herokuapp.com/integrations.")
+                    return
             module.users.add(request.user)
             sendMessenger(senderId, ""+module.name+" successfully activated! "+module.intro_message)
+            return
     else:
         sendMessenger(senderId, "Postback called")
+        return
 
 
 def dispatch(event):
