@@ -85,7 +85,8 @@ def receivedPostback(event):
     payload = event['postback']['payload']
 
     try:
-        ai_fb = ActiveIntegration.objects.get(external_user_id=senderId)
+        fb = Integration.objects.get(name='Facebook')
+        ai_fb = ActiveIntegration.objects.get(external_user_id=senderId, integration=fb)
     except:
         print "Unable to find User with external_user_id %s. (postback: '%s')" % (senderId, payload)
         sendMessenger(senderId, "I seem to have misplaced your User Account.  Can you please visit https://eleos-core.herokuapp.com/modules to get it sorted out?")
@@ -120,12 +121,45 @@ def receivedPostback(event):
         return
 
 
+def showModules(recipientId, user):
+
+    availableModules = Module.objects.all()
+    messageData = {"recipient": {"id": recipientId},
+                   'message': {
+                        'attachment': {
+                            'type': "template",
+                            'payload': {
+                                'template_type': "generic",
+                                'elements': []
+                                }}}}
+    for i in len(availableModules):
+        messageData['message']['attachment']['payload']['elements'].append({
+                                                                        'title': availableModules[i].name,
+                                                                        'subtitle': availableModules[i].description,
+                                                                        'item_url': "https://eleos-core.herokuapp.com/modules",
+                                                                        'image_url': availableModules[i].image_url,
+                                                                        'buttons': [{
+                                                                            'type': "postback",
+                                                                            'title': "",
+                                                                            'payload': "",
+                                                                        }]})
+        if user in availableModules[i].users.all():
+            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['title'] = "Deactivate "+availableModules[i].name
+            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['payload'] = "deactivate_module_id_ "+str(availableModules[i].id)
+        else:
+            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['title'] = "Activate "+availableModules[i].name
+            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['payload'] = "activate_module_id_ "+str(availableModules[i].id)
+
+    callSendAPI(messageData)
+
+
 def dispatch(event):
 
     senderId = event['sender']['id']
 
     try:
-        ai = ActiveIntegration.objects.get(external_user_id=senderId)
+        fb = Integration.objects.get(name='Facebook')
+        ai = ActiveIntegration.objects.get(external_user_id=senderId, integration=fb)
     except:
         ai = None
 
@@ -140,9 +174,10 @@ def dispatch(event):
 
     if 'text' in message:
 
-        if 'generic' in message['text']:
+        if 'generic' in message['text'].lower():
             sendGenericMessage(senderId)
-
+        elif 'show modules' in message['text'].lower() and ai:
+            showModules(senderId, ai.user)
         else:
             sendMessenger(senderId, message['text'])
 
