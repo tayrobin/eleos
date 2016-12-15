@@ -190,6 +190,7 @@ def newMessengerUser(event):
     try:
         user = User.objects.get(username=event['optin']['ref'])
     except:
+        user = None
         print "Unable to fetch User."
 
     integration = Integration.objects.get(name='Facebook')
@@ -203,31 +204,12 @@ def newMessengerUser(event):
     if new:
         # ONBOARDING
         sendMessenger(senderId, "Welcome to Eleos! We're here to serve you.  Please pick a Module to get started:")
-        availableModules = Module.objects.all()
-        messageData = {"recipient": {"id": senderId},
-                       'message': {
-                            'attachment': {
-                                'type': "template",
-                                'payload': {
-                                    'template_type': "generic",
-                                    'elements': []
-                                    }}}}
-        for module in availableModules:
-            messageData['message']['attachment']['payload']['elements'].append({
-                                                                            'title': module.name,
-                                                                            'subtitle': module.description,
-                                                                            'item_url': "https://eleos-core.herokuapp.com/modules",
-                                                                            'image_url': module.image_url,
-                                                                            'buttons': [{
-                                                                                'type': "postback",
-                                                                                'title': "Activate "+module.name,
-                                                                                'payload': "activate_module_id_"+str(module.id),
-                                                                            }]})
-
-        callSendAPI(messageData)
+        showModules(senderId, user)
+        return
     else:
         # already existed
         sendMessenger(senderId, "We meet again..")
+        return
 
 
 @csrf_exempt
