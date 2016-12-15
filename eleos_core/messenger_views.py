@@ -1,5 +1,6 @@
 import os
 import json
+import random
 import requests
 from django.http import HttpResponse
 from django.contrib.auth.models import User
@@ -30,50 +31,74 @@ def sendMessenger(recipientId, messageText):
     callSendAPI(messageData)
 
 
-def sendGenericMessage(recipientId):
+def showModules(recipientId, user):
 
-    messageData = {
-        'recipient': {
-            'id': recipientId
-        },
-        'message': {
-            'attachment': {
-                'type': "template",
-                'payload': {
-                    'template_type': "generic",
-                    'elements': [{
-                        'title': "rift",
-                        'subtitle': "Next-generation virtual reality",
-                        'item_url': "https://www.oculus.com/en-us/rift/",
-                        'image_url': "http://messengerdemo.parseapp.com/img/rift.png",
-                        'buttons': [{
-                            'type': "web_url",
-                            'url': "https://www.oculus.com/en-us/rift/",
-                            'title': "Open Web URL"
-                        }, {
-                            'type': "postback",
-                            'title': "Call Postback",
-                            'payload': "Payload for first bubble",
-                        }],
-                    }, {
-                        'title': "touch",
-                        'subtitle': "Your Hands, Now in VR",
-                        'item_url': "https://www.oculus.com/en-us/touch/",
-                        'image_url': "http://messengerdemo.parseapp.com/img/touch.png",
-                        'buttons': [{
-                            'type': "web_url",
-                            'url': "https://www.oculus.com/en-us/touch/",
-                            'title': "Open Web URL"
-                        }, {
-                            'type': "postback",
-                            'title': "Call Postback",
-                            'payload': "Payload for second bubble",
-                        }]
-                    }]
-                }
-            }
-        }
-    }
+    availableModules = Module.objects.all()
+    messageData = {"recipient": {"id": recipientId},
+                   'message': {
+        'attachment': {
+            'type': "template",
+            'payload': {
+                'template_type': "generic",
+                'elements': []
+            }}}}
+    for i in range(len(availableModules)):
+        messageData['message']['attachment']['payload']['elements'].append({
+            'title': availableModules[i].name,
+            'subtitle': availableModules[i].description,
+            'item_url': "https://eleos-core.herokuapp.com/modules",
+            'image_url': availableModules[i].image_url,
+            'buttons': [{
+                'type': "postback",
+                'title': "",
+                'payload': "",
+            }]})
+        if user in availableModules[i].users.all():
+            messageData['message']['attachment']['payload'][
+                'elements'][i]['buttons'][0]['title'] = "Deactivate"
+            messageData['message']['attachment']['payload']['elements'][i]['buttons'][
+                0]['payload'] = "deactivate_module_id_ " + str(availableModules[i].id)
+        else:
+            messageData['message']['attachment']['payload'][
+                'elements'][i]['buttons'][0]['title'] = "Activate"
+            messageData['message']['attachment']['payload']['elements'][i]['buttons'][
+                0]['payload'] = "activate_module_id_ " + str(availableModules[i].id)
+
+    callSendAPI(messageData)
+
+
+def showIntegrations(recipientId, user):
+
+    availableIntegrations = Integration.objects.all()
+    messageData = {"recipient": {"id": recipientId},
+                   'message': {
+        'attachment': {
+            'type': "template",
+            'payload': {
+                'template_type': "generic",
+                'elements': []
+            }}}}
+    for i in range(len(availableIntegrations)):
+        messageData['message']['attachment']['payload']['elements'].append({
+            'title': availableIntegrations[i].name,
+            'subtitle': availableIntegrations[i].description,
+            'item_url': "https://eleos-core.herokuapp.com/integrations",
+            'image_url': availableIntegrations[i].image_url,
+            'buttons': [{
+                'type': "postback",
+                'title': "",
+                'payload': "",
+            }]})
+        if user in availableIntegrations[i].users.all():
+            messageData['message']['attachment']['payload'][
+                'elements'][i]['buttons'][0]['title'] = "Deactivate"
+            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0][
+                'payload'] = "deactivate_integration_id_ " + str(availableIntegrations[i].id)
+        else:
+            messageData['message']['attachment']['payload'][
+                'elements'][i]['buttons'][0]['title'] = "Activate"
+            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0][
+                'payload'] = "activate_integration_id_ " + str(availableIntegrations[i].id)
 
     callSendAPI(messageData)
 
@@ -86,10 +111,12 @@ def receivedPostback(event):
 
     try:
         fb = Integration.objects.get(name='Facebook')
-        ai_fb = ActiveIntegration.objects.get(external_user_id=senderId, integration=fb)
+        ai_fb = ActiveIntegration.objects.get(
+            external_user_id=senderId, integration=fb)
     except:
         print "Unable to find User with external_user_id %s. (postback: '%s')" % (senderId, payload)
-        sendMessenger(senderId, "I seem to have misplaced your User Account.  Can you please visit https://eleos-core.herokuapp.com/modules to get it sorted out?")
+        sendMessenger(
+            senderId, "I seem to have misplaced your User Account.  Can you please visit https://eleos-core.herokuapp.com/modules to get it sorted out?")
         return
 
     print "Received postback for user %s with payload '%s' at %s" % (ai_fb.user, payload, timeOfPostback)
@@ -111,10 +138,12 @@ def receivedPostback(event):
             for integration in module.required_integrations.all():
                 if ai_fb.user not in integration.users.all():
                     # User hasn't enabled all necessary permissions
-                    sendMessenger(senderId, "You have not enabled all the necessary permissions for this Module.  Please visit https://eleos-core.herokuapp.com/integrations.")
+                    sendMessenger(
+                        senderId, "You have not enabled all the necessary permissions for this Module.  Please visit https://eleos-core.herokuapp.com/integrations.")
                     return
             module.users.add(ai_fb.user)
-            sendMessenger(senderId, ""+module.name+" successfully activated! "+module.intro_message)
+            sendMessenger(senderId, "" + module.name +
+                          " successfully activated! " + module.intro_message)
             return
     elif payload.startswith('deactivate_module_id_'):
 
@@ -127,11 +156,13 @@ def receivedPostback(event):
 
         if ai_fb.user not in module.users.all():
             print "User had not enabled this Module."
-            sendMessenger(senderId, "This Module is currently inactive for you.")
+            sendMessenger(
+                senderId, "This Module is currently inactive for you.")
             return
         else:
             module.users.remove(ai_fb.user)
-            sendMessenger(senderId, ""+module.name+" successfully deactivated.")
+            sendMessenger(senderId, "" + module.name +
+                          " successfully deactivated.")
             return
     elif payload.startswith('activate_integration_id_'):
         integrationId = payload.strip('activate_integration_id_')
@@ -141,10 +172,11 @@ def receivedPostback(event):
             print "Invalid Integration ID %s." % integrationId
             return
 
-        sendMessenger(senderId, "Please visit: "+"https://eleos-core.herokuapp.com/sendOAuth/"+integration.name)
+        sendMessenger(senderId, "Please visit: " +
+                      "https://eleos-core.herokuapp.com/sendOAuth/" + integration.name)
         return
     elif payload.startswith('deactivate_integration_id_'):
-        
+
         integrationId = payload.strip('deactivate_integration_id_')
         try:
             integration = Integration.objects.get(id=integrationId)
@@ -152,80 +184,55 @@ def receivedPostback(event):
             print "Invalid Integration ID %s." % integrationId
             return
         try:
-            ai = ActiveIntegration.objects.get(user=ai_fb.user, integration=integration)
+            ai = ActiveIntegration.objects.get(
+                user=ai_fb.user, integration=integration)
         except:
-            sendMessenger(senderId, "This Integration is currently inactive for you.")
+            sendMessenger(
+                senderId, "This Integration is currently inactive for you.")
             return
 
         ai.delete()
 
-        sendMessenger(senderId, ""+integration.name+" successfully deactivated.")
+        sendMessenger(senderId, "" + integration.name +
+                      " successfully deactivated.")
         return
+    elif payload == 'show_modules':
+        showModules(senderId, ai_fb.user)
+    elif payload == 'show_integrations':
+        showIntegrations(senderId, ai_fb.user)
     else:
         sendMessenger(senderId, "Postback called")
         return
 
 
-def showModules(recipientId, user):
+def sendHelpMessage(recipientId, user):
 
-    availableModules = Module.objects.all()
-    messageData = {"recipient": {"id": recipientId},
-                   'message': {
-                        'attachment': {
-                            'type': "template",
-                            'payload': {
-                                'template_type': "generic",
-                                'elements': []
-                                }}}}
-    for i in range(len(availableModules)):
-        messageData['message']['attachment']['payload']['elements'].append({
-                                                                        'title': availableModules[i].name,
-                                                                        'subtitle': availableModules[i].description,
-                                                                        'item_url': "https://eleos-core.herokuapp.com/modules",
-                                                                        'image_url': availableModules[i].image_url,
-                                                                        'buttons': [{
-                                                                            'type': "postback",
-                                                                            'title': "",
-                                                                            'payload': "",
-                                                                        }]})
-        if user in availableModules[i].users.all():
-            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['title'] = "Deactivate"
-            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['payload'] = "deactivate_module_id_ "+str(availableModules[i].id)
-        else:
-            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['title'] = "Activate"
-            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['payload'] = "activate_module_id_ "+str(availableModules[i].id)
-
-    callSendAPI(messageData)
-
-
-def showIntegrations(recipientId, user):
-    
-    availableIntegrations = Integration.objects.all()
-    messageData = {"recipient": {"id": recipientId},
-                   'message': {
-                        'attachment': {
-                            'type': "template",
-                            'payload': {
-                                'template_type': "generic",
-                                'elements': []
-                                }}}}
-    for i in range(len(availableIntegrations)):
-        messageData['message']['attachment']['payload']['elements'].append({
-                                                                        'title': availableIntegrations[i].name,
-                                                                        'subtitle': availableIntegrations[i].description,
-                                                                        'item_url': "https://eleos-core.herokuapp.com/integrations",
-                                                                        'image_url': availableIntegrations[i].image_url,
-                                                                        'buttons': [{
-                                                                            'type': "postback",
-                                                                            'title': "",
-                                                                            'payload': "",
-                                                                        }]})
-        if user in availableIntegrations[i].users.all():
-            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['title'] = "Deactivate"
-            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['payload'] = "deactivate_integration_id_ "+str(availableIntegrations[i].id)
-        else:
-            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['title'] = "Activate"
-            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['payload'] = "activate_integration_id_ "+str(availableIntegrations[i].id)
+    messageData = {
+                    "recipient":{
+                        "id":recipientId
+                      },
+                      "message":{
+                        "attachment":{
+                          "type":"template",
+                          "payload":{
+                            "template_type":"button",
+                            "text":"Sorry, I didn't understand that.  I'm still being programmed!  Here are some things I can do:",
+                            "buttons":[
+                              {
+                                "type":"postback",
+                                "title":"Show Modules",
+                                "payload":"show_modules"
+                              },
+                              {
+                                "type":"postback",
+                                "title":"Show Integrations",
+                                "payload":"show_integrations"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
 
     callSendAPI(messageData)
 
@@ -236,7 +243,8 @@ def dispatch(event):
 
     try:
         fb = Integration.objects.get(name='Facebook')
-        ai = ActiveIntegration.objects.get(external_user_id=senderId, integration=fb)
+        ai = ActiveIntegration.objects.get(
+            external_user_id=senderId, integration=fb)
     except:
         ai = None
 
@@ -249,14 +257,14 @@ def dispatch(event):
 
     if 'text' in message:
 
-        if 'generic' in message['text'].lower():
-            sendGenericMessage(senderId)
-        elif 'show modules' in message['text'].lower() and ai:
+        if 'modules' in message['text'].lower() and ai:
             showModules(senderId, ai.user)
-        elif 'show integrations' in message['text'].lower() and ai:
+        elif 'integrations' in message['text'].lower() and ai:
             showIntegrations(senderId, ai.user)
+        elif 'thanks' in message['text'].lower() and ai:
+            sendMessenger(senderId, random.choice(["Happy to help.", "My pleasure.", "Anything I can do to help.", "You're welcome!", "My what good manners you have!"]))
         else:
-            sendMessenger(senderId, message['text'])
+            sendHelpMessage(senderId, ai.user)
 
     elif 'attachments' in message:
         sendMessenger(senderId, "Message with attachment received")
@@ -282,7 +290,8 @@ def newMessengerUser(event):
 
     if new:
         # ONBOARDING
-        sendMessenger(senderId, "Welcome to Eleos! We're here to serve you.  Please pick a Module to get started:")
+        sendMessenger(
+            senderId, "Welcome to Eleos! We're here to serve you.  Please pick a Module to get started:")
         showModules(senderId, user)
         return
     else:
@@ -326,7 +335,8 @@ def receiveMessengerWebhook(request):
                     dispatch(event)
                 elif 'read' in event:
                     try:
-                        ai_fb = ActiveIntegration.objects.get(external_user_id=event['sender']['id'])
+                        ai_fb = ActiveIntegration.objects.get(
+                            external_user_id=event['sender']['id'])
                         print "%s has read my message ID: %s." % (ai_fb.user, event['read']['watermark'])
                     except:
                         print "Message recevied from unknown User."
