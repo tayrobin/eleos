@@ -103,17 +103,17 @@ def receivedPostback(event):
             print "Invalid Module ID %s." % moduleId
             return
 
-        if user in module.users.all():
+        if ai_fb.user in module.users.all():
             print "User already enabled this Module."
             sendMessenger(senderId, "You've already enabled this Module.")
             return
         else:
             for integration in module.required_integrations.all():
-                if user not in integration.users.all():
+                if ai_fb.user not in integration.users.all():
                     # User hasn't enabled all necessary permissions
                     sendMessenger(senderId, "You have not enabled all the necessary permissions for this Module.  Please visit https://eleos-core.herokuapp.com/integrations.")
                     return
-            module.users.add(request.user)
+            module.users.add(ai_fb.user)
             sendMessenger(senderId, ""+module.name+" successfully activated! "+module.intro_message)
             return
     else:
@@ -144,10 +144,10 @@ def showModules(recipientId, user):
                                                                             'payload': "",
                                                                         }]})
         if user in availableModules[i].users.all():
-            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['title'] = "Deactivate "+availableModules[i].name
+            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['title'] = "Deactivate"
             messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['payload'] = "deactivate_module_id_ "+str(availableModules[i].id)
         else:
-            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['title'] = "Activate "+availableModules[i].name
+            messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['title'] = "Activate"
             messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['payload'] = "activate_module_id_ "+str(availableModules[i].id)
 
     callSendAPI(messageData)
