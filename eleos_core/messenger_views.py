@@ -141,7 +141,7 @@ def receivedPostback(event):
             print "Invalid Integration ID %s." % integrationId
             return
 
-        sendMessenger(senderId, "Please visit: "+integration.auth_url)
+        sendMessenger(senderId, "Please visit: "+"https://eleos-core.herokuapp.com/sendOAuth/"+integration.name)
         return
     elif payload.startswith('deactivate_integration_id_'):
         
@@ -228,6 +228,7 @@ def showIntegrations(recipientId, user):
             messageData['message']['attachment']['payload']['elements'][i]['buttons'][0]['payload'] = "activate_integration_id_ "+str(availableIntegrations[i].id)
 
     callSendAPI(messageData)
+
 
 def dispatch(event):
 
