@@ -116,6 +116,23 @@ def receivedPostback(event):
             module.users.add(ai_fb.user)
             sendMessenger(senderId, ""+module.name+" successfully activated! "+module.intro_message)
             return
+    elif payload.startswith('deactivate_module_id_'):
+
+        moduleId = payload.strip('deactivate_module_id_')
+        try:
+            module = Module.objects.get(id=moduleId)
+        except:
+            print "Invalid Module ID %s." % moduleId
+            return
+
+        if ai_fb.user not in module.users.all():
+            print "User had not enabled this Module."
+            sendMessenger(senderId, "This Module is currently inactive for you.")
+            return
+        else:
+            module.users.remove(ai_fb.user)
+            sendMessenger(senderId, ""+module.name+" successfully deactivated.")
+            return
     else:
         sendMessenger(senderId, "Postback called")
         return
