@@ -81,14 +81,38 @@ def sendGenericMessage(recipientId):
 def receivedPostback(event):
 
     senderId = event['sender']['id']
-    recipientId = event['recipient']['id']
     timeOfPostback = event['timestamp']
-
     payload = event['postback']['payload']
 
-    print "Received postback for user %s and page %s with payload '%s' at %s" % (senderId, recipientId, payload, timeOfPostback)
+    try:
+        ai_fb = ActiveIntegration.objects.get(external_user_id=senderId)
+    except:
+        print "Unable to find User with external_user_id %s. (postback: '%s')" % (senderId, payload)
+        sendMessenger(senderId, "I seem to have misplaced your User Account.  Can you please visit https://eleos-core.herokuapp.com/modules to get it sorted out?")
 
-    sendMessenger(senderId, "Postback called")
+    print "Received postback for user %s with payload '%s' at %s" % (ai_fb.user, payload, timeOfPostback)
+
+    if payload.startswith('activate_module_id_'):
+
+        moduleId = payload.strip('activate_module_id_')
+        try:
+            module = Module.objects.get(id=moduleId)
+        except:
+            print "Invalid Module ID %s." % moduleId
+            return
+
+        if user in module.users.all():
+            print "User already enabled this Module."
+            sendMessenger(senderId, "You've already enabled this Module.")
+        else:
+            for integration in module.required_integrations.all():
+                if user not in integration.users.all():
+                    # User hasn't enabled all necessary permissions
+                    sendMessenger(senderId, "You have not enabled all the necessary permissions for this Module.  Please visit https://eleos-core.herokuapp.com/integrations.")
+            module.users.add(request.user)
+            sendMessenger(senderId, ""+module.name+" successfully activated! "+module.intro_message)
+    else:
+        sendMessenger(senderId, "Postback called")
 
 
 def dispatch(event):
@@ -158,7 +182,7 @@ def newMessengerUser(event):
                                                                             'image_url': module.image_url,
                                                                             'buttons': [{
                                                                                 'type': "postback",
-                                                                                'title': "Activate Module",
+                                                                                'title': "Activate "+module.name,
                                                                                 'payload': "activate_module_id_"+str(module.id),
                                                                             }]})
 
@@ -195,12 +219,12 @@ def receiveMessengerWebhook(request):
 
             for event in entry['messaging']:
 
-                if 'message' in event:
-                    dispatch(event)
+                if 'optin' in event:
+                    newMessengerUser(event)
                 elif 'postback' in event:
                     receivedPostback(event)
-                elif 'optin' in event:
-                    newMessengerUser(event)
+                elif 'message' in event:
+                    dispatch(event)
                 elif 'read' in event:
                     try:
                         ai_fb = ActiveIntegration.objects.get(external_user_id=event['sender']['id'])
