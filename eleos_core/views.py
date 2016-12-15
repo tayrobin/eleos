@@ -1,4 +1,5 @@
 import os
+import json
 import requests
 from django.urls import reverse
 from django.shortcuts import render
@@ -83,21 +84,25 @@ def deactivateModule(request, id):
 @csrf_exempt
 def foursquareCheckin(request):
 
-    dataDict = dict(request.POST)
-    print "dataDict", dataDict
     dataJson = json.loads(request.POST)
     print "dataJson", dataJson
 
-    if dataDict['checkin'][0]['user']['id'] == "147283036":
+    swarmUserId = dataJson['checkin'][0]['user']['id']
+    venueName = dataJson['checkin'][0]['venue']['name']
+
+    print "@%s went to %s" % (swarmUserId, venueName)
+
+    facebook = Integration.objects.get(name='Facebook')
+    swarm = Integration.objects.get(name='Swarm')
+
+    if swarmUserId == "147283036":
 
         # send intro message
-        facebook = Integration.objects.get(name='Facebook')
-        swarm = Integration.objects.get(name='Swarm')
         try:
-            ai_swarm = ActiveIntegration.objects.get(external_user_id=dataDict['checkin'][0]['user']['id'], integration=swarm)
+            ai_swarm = ActiveIntegration.objects.get(external_user_id=swarmUserId, integration=swarm)
             ai_facebook = ActiveIntegration.objects.get(user=ai_swarm.user, integration=facebook)
             if ai_facebook:
-                sendMessenger(recipientId=ai_facebook.external_user_id, messageText="Nice check in at %s!"%dataDict['checkin'][0]['venue']['name'])
+                sendMessenger(recipientId=ai_facebook.external_user_id, messageText="Nice check in at %s!"%venueName)
         except:
             return HttpResponse(status=201)
 
