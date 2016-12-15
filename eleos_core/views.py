@@ -84,27 +84,36 @@ def deactivateModule(request, id):
 @csrf_exempt
 def foursquareCheckin(request):
 
-    dataJson = json.loads(request.POST)
+    print request.POST
+    dataJson = json.loads(dict(request.POST)['checkin'][0])
     print "dataJson", dataJson
 
-    swarmUserId = dataJson['checkin'][0]['user']['id']
-    venueName = dataJson['checkin'][0]['venue']['name']
+    swarmUserId = dataJson['user']['id']
+    venueName = dataJson['venue']['name']
 
     print "@%s went to %s" % (swarmUserId, venueName)
 
     facebook = Integration.objects.get(name='Facebook')
     swarm = Integration.objects.get(name='Swarm')
 
-    if swarmUserId == "147283036":
+    try:
+        ai_swarm = ActiveIntegration.objects.get(external_user_id=swarmUserId, integration=swarm)
+    except:
+        print "Unable to find ActiveIntegration for this User."
+        return HttpResponse(status=201)
 
-        # send intro message
-        try:
-            ai_swarm = ActiveIntegration.objects.get(external_user_id=swarmUserId, integration=swarm)
-            ai_facebook = ActiveIntegration.objects.get(user=ai_swarm.user, integration=facebook)
-            if ai_facebook:
-                sendMessenger(recipientId=ai_facebook.external_user_id, messageText="Nice check in at %s!"%venueName)
-        except:
-            return HttpResponse(status=201)
+    try:
+        ai_facebook = ActiveIntegration.objects.get(user=ai_swarm.user, integration=facebook)
+        print "Now have ActiveIntegrations for both Swarm and FBM for %s" % ai_facebook.user
+    except:
+        print "Looks like %s hasn't given permission for FBM." % ai_swarm.user
+        return HttpResponse(status=201)
+
+    # send intro message
+    try:
+        sendMessenger(recipientId=ai_facebook.external_user_id, messageText="Nice checkin at %s!"%venueName)
+    except:
+        return HttpResponse(status=201)
 
     return HttpResponse(status=201)
 
