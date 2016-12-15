@@ -83,8 +83,10 @@ def deactivateModule(request, id):
 @csrf_exempt
 def foursquareCheckin(request):
 
-    data = request.POST
-    print data
+    dataDict = dict(request.POST)
+    print "dataDict", dataDict
+    dataJson = json.loads(request.POST)
+    print "dataJson", dataJson
     """
     {u'checkin': [u'{"id":"584fb810dad26340511f798c","createdAt":1481619472,"type":"checkin",
     "timeZone":"America\\/Los_Angeles","timeZoneOffset":-480,"user":{"id":"147283036",
@@ -106,14 +108,14 @@ def foursquareCheckin(request):
     "homeCity":"California","bio":"","contact":{"phone":"3178094648","verifiedPhone":"true",
     "email":"taylor.howard.robinson@gmail.com","twitter":"_t_rob"}}']}
     """
-    if data['checkin'][0]['user']['id'] == "147283036":
+    if dataDict['checkin'][0]['user']['id'] == "147283036":
 
         # send intro message
         i = Integration.objects.get(name='Facebook')
         try:
             ai = ActiveIntegration.objects.get(user=request.user, integration=i)
             if ai.external_user_id:
-                sendMessenger(recipientId=ai.external_user_id, messageText="Nice check in at %s!"%data['checkin'][0]['venue']['name'])
+                sendMessenger(recipientId=ai.external_user_id, messageText="Nice check in at %s!"%dataDict['checkin'][0]['venue']['name'])
         except:
             return HttpResponse(status=201)
 
