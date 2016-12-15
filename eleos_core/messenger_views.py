@@ -132,7 +132,7 @@ def showModules(recipientId, user):
                                 'template_type': "generic",
                                 'elements': []
                                 }}}}
-    for i in len(availableModules):
+    for i in range(len(availableModules)):
         messageData['message']['attachment']['payload']['elements'].append({
                                                                         'title': availableModules[i].name,
                                                                         'subtitle': availableModules[i].description,
@@ -163,8 +163,6 @@ def dispatch(event):
     except:
         ai = None
 
-    recipientId = event['recipient']['id']
-    timeOfMessage = event['timestamp']
     message = event['message']
 
     print "Received message from user %s:" % (ai.user if ai else senderId)
