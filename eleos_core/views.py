@@ -2,6 +2,7 @@ import os
 import json
 import requests
 from django.urls import reverse
+#from oauth2client import client
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.http import JsonResponse
@@ -89,6 +90,14 @@ def sendOAuth(request, integrationName):
             return redirect(integration.auth_url+"?"+"app_id="+os.environ['FACEBOOK_APP_ID']+
                                                     "&"+"redirect_uri="+"https://eleos-core.herokuapp.com/receive_facebook_oauth")
         elif integration.name == 'Calendar':
+            '''
+            flow = client.flow_from_clientsecrets(
+                    'client_secrets.json',
+                    scope='https://www.googleapis.com/auth/calendar.readonly',
+                    redirect_uri='https://eleos-core.herokuapp.com/receive_calendar_oauth')
+            auth_uri = flow.step1_get_authorize_url()
+            return redirect(auth_uri)
+            '''
             return redirect(integration.auth_url+"?"+"scope="+"https://www.googleapis.com/auth/calendar.readonly"+
                                                     "&"+"client_id="+os.environ['CALENDAR_CLIENT_ID']+
                                                     "&"+"redirect_uri="+"https://eleos-core.herokuapp.com/receive_calendar_oauth"+
