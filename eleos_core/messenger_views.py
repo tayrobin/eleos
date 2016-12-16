@@ -344,3 +344,37 @@ def receiveMessengerWebhook(request):
                     print "Webhook received unknown event: ", event
 
     return HttpResponse(status=201)
+
+
+@login_required()
+def receiveFacebookOAuth(request):
+
+    if request.method == 'GET':
+        print "GET", request.GET
+    elif request.method == 'POST':
+        print "POST", request.POST
+        print "DATA", request.body
+
+    # parse CODE
+    tempCode = request.GET['code']
+
+    # send to CODE<-->Auth_Token URL
+    integration = get_object_or_404(Integration, name='Facebook')
+
+    response = requests.get(integration.token_url, {"client_id":os.environ['FACEBOOK_APP_ID'],
+                                                    "client_secret":os.environ['FACEBOOK_APP_SECRET'],
+                                                    "code":tempCode,
+                                                    "redirect_uri":"https://eleos-core.herokuapp.com/receive_facebook_oauth"})
+
+    response = response.json()
+    access_token = response['access_token']
+    print request.user.username, integration.name, access_token
+
+    # Create new Link
+    activeIntegration, new = ActiveIntegration.objects.get_or_create(user=request.user, integration=integration)
+    if not activeIntegration.access_token:
+        activeIntegration.access_token = access_token
+        activeIntegration.save()
+
+    # send back to integrations
+    return redirect('/integrations')

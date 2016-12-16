@@ -12,13 +12,6 @@ from .models import Integration, Module, ActiveIntegration
 from .messenger_views import sendMessenger
 
 
-def showTest(request):
-
-    #myDict = {'APP_ID': os.environ['FACEBOOK_APP_ID'], 'PAGE_ID': os.environ['FACEBOOK_PAGE_ID']}
-    pass
-    #return render(request, 'test_messenger.html', myDict)
-
-
 @login_required()
 def listIntegrations(request):
 
@@ -81,63 +74,6 @@ def deactivateModule(request, id):
     return redirect('/modules')
 
 
-@csrf_exempt
-def foursquareCheckin(request):
-
-    print request.POST
-    dataJson = json.loads(dict(request.POST)['checkin'][0])
-    print "dataJson", dataJson
-
-    swarmUserId = dataJson['user']['id']
-    venueName = dataJson['venue']['name']
-
-    print "@%s went to %s" % (swarmUserId, venueName)
-
-    facebook = Integration.objects.get(name='Facebook')
-    swarm = Integration.objects.get(name='Swarm')
-
-    try:
-        ai_swarm = ActiveIntegration.objects.get(external_user_id=swarmUserId, integration=swarm)
-    except:
-        print "Unable to find ActiveIntegration for this User."
-        return HttpResponse(status=201)
-
-    try:
-        ai_facebook = ActiveIntegration.objects.get(user=ai_swarm.user, integration=facebook)
-        print "Now have ActiveIntegrations for both Swarm and FBM for %s" % ai_facebook.user
-    except:
-        print "Looks like %s hasn't given permission for FBM." % ai_swarm.user
-        return HttpResponse(status=201)
-
-    # send intro message
-    try:
-        sendMessenger(recipientId=ai_facebook.external_user_id, messageText="Nice checkin at %s!"%venueName)
-    except:
-        return HttpResponse(status=201)
-
-    return HttpResponse(status=201)
-
-
-def foursquareDetails(activeIntegration):
-
-    # get user profile
-    response = requests.get('https://api.foursquare.com/v2/users/self', {'oauth_token':activeIntegration.access_token, 'v':'20161212'})
-    data = response.json()
-    print activeIntegration.user.username, "User Profile", data
-
-    try:
-        user_id = data['response']['user']['id']
-        activeIntegration.external_user_id = user_id
-        activeIntegration.save()
-    except:
-        print "Unable to parse User ID from response."
-
-    # get checkin history
-    response = requests.get('https://api.foursquare.com/v2/users/self/checkins', {'oauth_token':activeIntegration.access_token, 'v':'20161212'})
-    data = response.json()
-    print activeIntegration.user.username, "Checkin History", data
-
-
 def sendOAuth(request, integrationName):
 
     integration = get_object_or_404(Integration, name=integrationName)
@@ -154,67 +90,3 @@ def sendOAuth(request, integrationName):
                                                     "&"+"redirect_uri="+"https://eleos-core.herokuapp.com/receive_facebook_oauth")
         else:
             return redirect(integration.auth_url) # ++ params
-
-
-@login_required()
-def receiveOAuth(request):
-
-    # parse CODE
-    tempCode = request.GET['code']
-
-    # send to CODE<-->Auth_Token URL
-    if True:
-        integration = get_object_or_404(Integration, name='Swarm')
-
-        response = requests.get(integration.token_url, {"client_id":os.environ['FOURSQUARE_CLIENT_ID'],
-                                                        "client_secret":os.environ['FOURSQUARE_CLIENT_SECRET'],
-                                                        "grant_type":"authorization_code", "code":tempCode,
-                                                        "redirect_uri":"https://eleos-core.herokuapp.com/receiveOAuth"})
-
-        response = response.json()
-        access_token = response['access_token']
-        print request.user.username, integration.name, access_token
-
-    # Create new Link
-    activeIntegration, new = ActiveIntegration.objects.get_or_create(user=request.user, integration=integration, access_token=access_token)
-
-    # pull history
-    if new and integration.name=='Swarm':
-        foursquareDetails(activeIntegration)
-
-    # send back to integrations
-    return redirect('/integrations')
-
-
-@login_required()
-def receiveFacebookOAuth(request):
-
-    if request.method == 'GET':
-        print "GET", request.GET
-    elif request.method == 'POST':
-        print "POST", request.POST
-        print "DATA", request.body
-
-    # parse CODE
-    tempCode = request.GET['code']
-
-    # send to CODE<-->Auth_Token URL
-    integration = get_object_or_404(Integration, name='Facebook')
-
-    response = requests.get(integration.token_url, {"client_id":os.environ['FACEBOOK_APP_ID'],
-                                                    "client_secret":os.environ['FACEBOOK_APP_SECRET'],
-                                                    "code":tempCode,
-                                                    "redirect_uri":"https://eleos-core.herokuapp.com/receive_facebook_oauth"})
-
-    response = response.json()
-    access_token = response['access_token']
-    print request.user.username, integration.name, access_token
-
-    # Create new Link
-    activeIntegration, new = ActiveIntegration.objects.get_or_create(user=request.user, integration=integration)
-    if not activeIntegration.access_token:
-        activeIntegration.access_token = access_token
-        activeIntegration.save()
-
-    # send back to integrations
-    return redirect('/integrations')

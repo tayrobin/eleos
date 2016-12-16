@@ -1,5 +1,6 @@
 import eleos_core.views
 import eleos_core.messenger_views
+import eleos_core.foursquare_views
 from django.contrib import admin
 from django.conf.urls import url, include
 from eleos_core.forms import LoginForm, SignupForm
@@ -33,13 +34,13 @@ urlpatterns = [
     url(r'^delete_active_integration/(?P<name>\w+)/$',  eleos_core.views.deleteActiveIntegration, name="deleteActiveIntegration"),
     url(r'^sendOAuth/(?P<integrationName>[\w]+)/$',     eleos_core.views.sendOAuth, name='sendOAuth'),
 
-    # swarm
-    url(r'^foursquare_checkin/$',                       eleos_core.views.foursquareCheckin, name='foursquareCheckin'),
-    url(r'^receiveOAuth/$',                             eleos_core.views.receiveOAuth, name='receiveOAuth'),
+    # foursquare/swarm
+    url(r'^foursquare_checkin/$',                       eleos_core.foursquare_views.foursquareCheckin, name='foursquareCheckin'),
+    url(r'^receiveOAuth/$',                             eleos_core.foursquare_views.receiveFoursquareOAuth, name='receiveOAuth'),
 
     # facebook
     url(r'^receive_messenger_webhook/$',                eleos_core.messenger_views.receiveMessengerWebhook, name="receiveMessengerWebhook"),
-    url(r'^receive_facebook_oauth/$',                   eleos_core.views.receiveFacebookOAuth, name='receiveFacebookOAuth'),
+    url(r'^receive_facebook_oauth/$',                   eleos_core.messenger_views.receiveFacebookOAuth, name='receiveFacebookOAuth'),
 
     # admin stuff
     url(r'^admin/',                                     include(admin.site.urls)),
