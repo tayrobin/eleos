@@ -88,5 +88,11 @@ def sendOAuth(request, integrationName):
         elif integration.name == 'Facebook':
             return redirect(integration.auth_url+"?"+"app_id="+os.environ['FACEBOOK_APP_ID']+
                                                     "&"+"redirect_uri="+"https://eleos-core.herokuapp.com/receive_facebook_oauth")
+        elif integration.name == 'Calendar':
+            return redirect(integration.auth_url+"?"+"scope="+"https://www.googleapis.com/auth/calendar.readonly"+
+                                                    "&"+"client_id="+os.environ['CALENDAR_CLIENT_ID']+
+                                                    "&"+"redirect_uri="+"https://eleos-core.herokuapp.com/receive_calendar_oauth"+
+                                                    "&"+"response_type="+"code"+
+                                                    "&"+"access_type="+"offline")
         else:
             return redirect(integration.auth_url) # ++ params

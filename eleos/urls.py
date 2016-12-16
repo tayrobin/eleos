@@ -1,6 +1,7 @@
 import eleos_core.views
 import eleos_core.messenger_views
 import eleos_core.foursquare_views
+import eleos_core.calendar_views
 from django.contrib import admin
 from django.conf.urls import url, include
 from eleos_core.forms import LoginForm, SignupForm
@@ -12,9 +13,6 @@ from django.contrib.auth.forms import UserCreationForm
 urlpatterns = [
     # basic
     url(r'^$',                                          TemplateView.as_view(template_name='home.html'), name='home'),
-
-    # test
-    #url(r'^test/$',                                     eleos_core.views.showTest, name='test'),
 
     # register/login/logout
     url(r'^register/',                                  CreateView.as_view(template_name='register.html', form_class=SignupForm, success_url='/login'), name='register'),
@@ -41,6 +39,10 @@ urlpatterns = [
     # facebook
     url(r'^receive_messenger_webhook/$',                eleos_core.messenger_views.receiveMessengerWebhook, name="receiveMessengerWebhook"),
     url(r'^receive_facebook_oauth/$',                   eleos_core.messenger_views.receiveFacebookOAuth, name='receiveFacebookOAuth'),
+
+    # google calendar
+    url(r'^receive_gcal/$',                             eleos_core.calendar_views.receiveGcal, name='receiveGcal'),
+    url(r'^receive_calendar_oauth/$',                   eleos_core.calendar_views.receiveCalendarOAuth, name='receiveCalendarOAuth'),
 
     # admin stuff
     url(r'^admin/',                                     include(admin.site.urls)),
