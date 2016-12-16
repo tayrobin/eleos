@@ -6,7 +6,7 @@ import requests
 #import httplib2
 from django.http import HttpResponse
 from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from .models import ActiveIntegration, Integration, Module
@@ -425,28 +425,6 @@ def receiveCalendarOAuth(request):
 	print "inputs: ", inputs
 
 	tempCode = inputs['code'][0]
-
-	'''
-	flow = client.flow_from_clientsecrets(
-			'client_secrets.json',
-			scope='https://www.googleapis.com/auth/calendar.readonly',
-			redirect_uri='https://eleos-core.herokuapp.com/receive_calendar_oauth')
-	flow.params['access_type'] = 'offline'
-	credentials = flow.step2_exchange(tempCode)
-	http_auth = credentials.authorize(httplib2.Http())
-	service = discovery.build('calendar', 'v3', http=http_auth)
-
-	eventsResult = service.events().list(
-        calendarId='primary', timeMin=now, maxResults=10, singleEvents=True,
-        orderBy='startTime').execute()
-    events = eventsResult.get('items', [])
-
-    if not events:
-        print('No upcoming events found.')
-    for event in events:
-        start = event['start'].get('dateTime', event['start'].get('date'))
-        print(start, event['summary'])
-	'''
 
 	# send to CODE<-->Auth_Token URL
 	integration = get_object_or_404(Integration, name='Calendar')
