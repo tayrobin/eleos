@@ -433,7 +433,7 @@ def receiveCalendarOAuth(request):
 													"code":tempCode,
 													"redirect_uri":"https://eleos-core.herokuapp.com/receive_calendar_oauth",
 													"grant_type":"authorization_code"})
-
+	print response.text
 	authData = response.json()
 	try:
 		refreshToken = authData['refresh_token']
