@@ -94,6 +94,7 @@ def sendOAuth(request, integrationName):
                                                     "&"+"client_id="+os.environ['CALENDAR_CLIENT_ID']+
                                                     "&"+"redirect_uri="+"https://eleos-core.herokuapp.com/receive_calendar_oauth"+
                                                     "&"+"response_type="+"code"+
-                                                    "&"+"access_type="+"offline")
+                                                    "&"+"access_type="+"offline",
+                                                    "&"+"prompt="+"consent")
         else:
             return redirect(integration.auth_url) # ++ params
