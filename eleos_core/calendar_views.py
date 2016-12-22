@@ -29,8 +29,9 @@ def refreshAuthToken(access_token):
 	else:
 		print "error retrieving refresh_token from server for access_token: %s"%access_token
 		print "need the user to re-auth calendar access"
-		## really I should be using a specific param to ask for new refresh_token as well..
-		## set prompt=consent in the offline access step (https://developers.google.com/identity/protocols/OAuth2WebServer#refresh)
+		# really I should be using a specific param to ask for new refresh_token as well..
+		# set prompt=consent in the offline access step
+		# (https://developers.google.com/identity/protocols/OAuth2WebServer#refresh)
 		return render('google-auth.html')
 	'''
 
@@ -88,9 +89,12 @@ def stopWatchCalendar(user):
         stopUri = "https://www.googleapis.com/calendar/v3/channels/stop"
         response = requests.post(stopUri, headers={'Authorization': 'Bearer ' + ai_gcal.access_token, 'Content-Type': 'application/json'},
                                  data=json.dumps({'resourceId': ai_gcal.resource_id, 'id': ai_gcal.resource_uuid}))
-        if response.status_code == 200:
-            print "STOP response: ", response.json()
-            return True
+        if response.status_code == 200 or response.status_code == 204:
+			try:
+				print "STOP response: ", response.json()
+			except:
+				print "No JSON object in STOP response."
+			return True
         elif response.status_code == 401:
             print "outdated access_token\nCalling refresh method"
             access_token = refreshAuthToken(ai_gcal.access_token)
@@ -98,15 +102,13 @@ def stopWatchCalendar(user):
         else:
             print "Error"
             print "Status Code: ", response.status_code
-            errorData = response.json()
-            print "STOP response json: ", errorData
-
             try:
-                print "STOP response headers: ", response.headers
-                print "STOP response text: ", response.text
+				errorData = response.json()
+				print "STOP response json: ", errorData
+				print "STOP response headers: ", response.headers
+				print "STOP response text: ", response.text
             except:
                 pass
-
             return False
     else:
         print "No GCal ActiveIntegration found for User: %s" % user
