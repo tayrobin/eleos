@@ -87,7 +87,7 @@ def stopWatchCalendar(user):
     if ai_gcal:
         stopUri = "https://www.googleapis.com/calendar/v3/channels/stop"
         response = requests.post(stopUri, headers={'Authorization': 'Bearer ' + ai_gcal.access_token, 'Content-Type': 'application/json'},
-                                 data=json.dumps({'resource_id': ai_gcal.resource_id, 'id': ai_gcal.resource_uuid}))
+                                 data=json.dumps({'resourceId': ai_gcal.resource_id, 'id': ai_gcal.resource_uuid}))
         if response.status_code == 200:
             print "STOP response: ", response.json()
             return True
@@ -103,7 +103,6 @@ def stopWatchCalendar(user):
 
             try:
                 print "STOP response headers: ", response.headers
-                print "STOP response body: ", response.body
                 print "STOP response text: ", response.text
             except:
                 pass
