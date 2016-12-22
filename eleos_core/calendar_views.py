@@ -91,15 +91,23 @@ def stopWatchCalendar(user):
         if response.status_code == 200:
             print "STOP response: ", response.json()
             return True
+		elif response.status_code == 401:
+			print "outdated access_token\nCalling refresh method"
+	        access_token = refreshAuthToken(ai_gcal.access_token)
+	        stopWatchCalendar(user)
         else:
             print "Error"
+			print "Status Code: ", response.status_code
+			errorData = response.json()
+			print "STOP response json: ", errorData
+
             try:
-                print "STOP response json: ", response.json()
-                print "STOP response headers: ", response.META
+                print "STOP response headers: ", response.headers
                 print "STOP response body: ", response.body
                 print "STOP response text: ", response.text
             except:
                 pass
+
             return False
     else:
         print "No GCal ActiveIntegration found for User: %s" % user
