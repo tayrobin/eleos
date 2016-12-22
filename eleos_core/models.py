@@ -54,5 +54,14 @@ class ActiveIntegration(models.Model):
     access_token = models.TextField(blank=True, default=None, null=True)
     external_user_id = models.TextField("Unique ID of User in External Service.", blank=True, default=None, null=True)
 
+    # adding details for Google Calendar integration
+    refresh_token = models.TextField("Token to refresh access_token after expiration.", blank=True, default=None, null=True)
+    expires_in = models.TextField("Length of time, in seconds, that access_token is valid for.", blank=True, default=None, null=True)
+    token_type = models.TextField("Permissions to which the access_token grants access.", blank=True, default=None, null=True)
+    resource_uri = models.TextField("The URI to which the access_token grants access.", blank=True, default=None, null=True)
+    resource_id = models.TextField("The ID of the external resource (i.e. the Calendar ID).", blank=True, default=None, null=True)
+    resource_uuid = models.TextField("My UUID for the resource, created upon activation.", blank=True, default=None, null=True)
+    next_sync_token = models.TextField("A bookmark for Google Calendar events.", blank=True, default=None, null=True)
+
     def __str__(self):
         return "%s <--> %s" % (self.user.username, self.integration.name)

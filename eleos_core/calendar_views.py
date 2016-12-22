@@ -5,6 +5,7 @@ import random
 import requests
 #import httplib2
 from django.http import HttpResponse
+from .messenger_views import sendMessenger
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.csrf import csrf_exempt
@@ -12,462 +13,463 @@ from django.contrib.auth.decorators import login_required
 from .models import ActiveIntegration, Integration, Module
 
 
+@csrf_exempt
+def refreshAuthToken(access_token):
+
+    print "refreshing auth token"
+
+    refreshUrl = "https://www.googleapis.com/oauth2/v4/token"  # POST
+
+    # get refresh token from server
+    integration = get_object_or_404(Integration, name='Calendar')
+    ai_gcal = ActiveIntegration.get_object_or_404(
+        integration=integration, access_token=access_token)
+    refresh_token = ai_gcal.refresh_token
+
+    '''
+	else:
+		print "error retrieving refresh_token from server for access_token: %s"%access_token
+		print "need the user to re-auth calendar access"
+		## really I should be using a specific param to ask for new refresh_token as well..
+		## set prompt=consent in the offline access step (https://developers.google.com/identity/protocols/OAuth2WebServer#refresh)
+		return render('google-auth.html')
+	'''
+
+    response = requests.post(refreshUrl, data={'client_id': os.environ['CALENDAR_CLIENT_ID'], 'client_secret': os.environ[
+                             'CALENDAR_CLIENT_SECRET'], 'refresh_token': refresh_token, 'grant_type': 'refresh_token'})
+    if response.status_code == 200:
+        newData = response.json()
+        access_token = newData['access_token']
+        expires_in = newData['expires_in']
+        token_type = newData['token_type']
+
+        # now update server
+        ai_gcal.access_token = access_token
+        ai_gcal.expires_in = expires_in
+        ai_gcal.token_type = token_type
+        ai_gcal.save()
+        print "new access_token saved!"
+
+        return access_token
+
+    else:
+        print "error refreshing token"
+        print "headers: ", response.headers
+        print "text: ", response.text
+
+
 def askWatchCalendar(calendar, access_token):
 
-	print "asking for permission to watch calendar"
+    print "asking for permission to watch calendar"
 
-	response = requests.post("https://www.googleapis.com/calendar/v3/calendars/" + calendar + "/events/watch",
-								headers={'Authorization': 'Bearer ' + access_token,
-								    'Content-Type': 'application/json'},
-								data=json.dumps({'id': str(uuid.uuid4()), 'type': 'web_hook', 'address': 'https://eleos-core.herokuapp.com/receive_gcal/'}))
-	print response
-	watchData = response.json()
-	print "watchData: ", watchData
+    response = requests.post("https://www.googleapis.com/calendar/v3/calendars/" + calendar + "/events/watch",
+                             headers={'Authorization': 'Bearer ' + access_token,
+                                      'Content-Type': 'application/json'},
+                             data=json.dumps({'id': str(uuid.uuid4()), 'type': 'web_hook', 'address': 'https://eleos-core.herokuapp.com/receive_gcal/'}))
+    print response
+    watchData = response.json()
+    print "watchData: ", watchData
 
-	if response.status_code == 200:
+    if response.status_code == 200:
 
-		resource_uri = watchData['resourceUri']
-		resource_id = watchData['resourceId']
-		resource_uuid = watchData['id']
+        resource_uri = watchData['resourceUri']
+        resource_id = watchData['resourceId']
+        resource_uuid = watchData['id']
 
-		return True, resource_uri, resource_id, resource_uuid
-	else:
-		return False, None, None, None
+        return True, resource_uri, resource_id, resource_uuid
+    else:
+        return False, None, None, None
 
 
 def getCalendars(access_token):
 
-	print "Fetching Calendars List for user"
+    print "Fetching Calendars List for user"
 
-	calendarListUrl = "https://www.googleapis.com/calendar/v3/users/me/calendarList"  # GET
+    calendarListUrl = "https://www.googleapis.com/calendar/v3/users/me/calendarList"  # GET
 
-	response = requests.get(calendarListUrl, headers={
-	                        'Content-Type': 'application/json'}, params={'access_token': access_token})
-	if response.status_code == 200:
+    response = requests.get(calendarListUrl, headers={
+                            'Content-Type': 'application/json'}, params={'access_token': access_token})
+    if response.status_code == 200:
 
-		responseData = response.json()
-		print "response: ", responseData
+        responseData = response.json()
+        print "response: ", responseData
 
-		for calendar in responseData['items']:
+        for calendar in responseData['items']:
 
-			if 'primary' in calendar and calendar['primary'] == True:
+            if 'primary' in calendar and calendar['primary'] == True:
 
-				return calendar['id']
+                return calendar['id']
 
-	return None
+    return None
 
 
 def getEvent(event_id, uri, access_token):
 
-	print "Fetching Calendar Event for user"
+    print "Fetching Calendar Event for user"
 
-	# seemingly producing a 404 error, need to read Docs more...
-	eventUrl = uri.strip('?maxResults=250&alt=json') + "/" + event_id
+    # seemingly producing a 404 error, need to read Docs more...
+    eventUrl = uri.strip('?maxResults=250&alt=json') + "/" + event_id
 
-	response = requests.get(eventUrl, headers={
-	                        'Content-Type': 'application/json'}, params={'access_token': access_token})
+    response = requests.get(eventUrl, headers={
+                            'Content-Type': 'application/json'}, params={'access_token': access_token})
 
-	if response.status_code == 200:
-		eventDetails = response.json()
-		print "eventDetails: ", eventDetails
-	else:
-		print response
-		print "headers: ", response.headers
-		print "text: ", response.text
+    if response.status_code == 200:
+        eventDetails = response.json()
+        print "eventDetails: ", eventDetails
+    else:
+        print response
+        print "headers: ", response.headers
+        print "text: ", response.text
 
 
 def getAllEvents(uri, uuid, resource_id):
 
-	print "Fetching all Calendar Events for user"
+    print "Fetching all Calendar Events for user"
 
-	cur.execute(getAccessToken, {'resource_uri': uri,
-	            'resource_uuid': uuid, 'resource_id': resource_id})
-	access_token = cur.fetchone()[0]
+    cur.execute(getAccessToken, {'resource_uri': uri,
+                                 'resource_uuid': uuid, 'resource_id': resource_id})
+    access_token = cur.fetchone()[0]
 
-	response = requests.get(uri, headers={'Content-Type': 'application/json'}, params={
-	                        'access_token': access_token, 'maxResults': 10})
+    response = requests.get(uri, headers={'Content-Type': 'application/json'}, params={
+                            'access_token': access_token, 'maxResults': 10})
 
-	if response.status_code == 200:
-		responseData = response.json()
-		print "response: ", responseData
+    if response.status_code == 200:
+        responseData = response.json()
+        print "response: ", responseData
 
-		next_sync_token = responseData['nextSyncToken']
-		print "next_sync_token: ", next_sync_token
+        next_sync_token = responseData['nextSyncToken']
+        print "next_sync_token: ", next_sync_token
 
-		cur.execute(saveNextSyncToken, {'next_sync_token': next_sync_token,
-		            'resource_uri': uri, 'resource_uuid': uuid, 'resource_id': resource_id})
-		conn.commit()
-		print "next_sync_token saved."
+        cur.execute(saveNextSyncToken, {'next_sync_token': next_sync_token,
+                                        'resource_uri': uri, 'resource_uuid': uuid, 'resource_id': resource_id})
+        conn.commit()
+        print "next_sync_token saved."
 
 
 def getNewEvents(uri, uuid, resource_id, next_page_token_given=None):
 
-	print "Updating Events since last sync"
+    print "Updating Events since last sync"
 
-	### comment all out until rewritten ###
+    integration = get_object_or_404(Integration, name='Calendar')
+    ai_gcal = ActiveIntegration.get_object_or_404(
+        integration=integration, resource_uuid=uuid)
+    access_token = ai_gcal.access_token
+    sync_token = ai_gcal.next_sync_token
 
-	return None
+    if next_page_token_given:
+        response = requests.get(uri, headers={'Content-Type': 'application/json'}, params={
+                                'access_token': access_token, 'syncToken': sync_token, 'pageToken': next_page_token_given})
+    else:
+        response = requests.get(uri, headers={'Content-Type': 'application/json'}, params={
+                                'access_token': access_token, 'syncToken': sync_token})
 
-	'''
-	# access_token, sync_token needed
-	cur.execute(getAccessTokenAndSyncToken, {
-	            'resource_uri':uri, 'resource_uuid':uuid, 'resource_id':resource_id})
-	tokens = cur.fetchone()
-	if tokens is not None:
-		access_token = tokens[0]
-		sync_token = tokens[1]
-	else:
-		print "unable to grab access_token and sync_token from database... have I seen this user before?"
-		return
+    if response.status_code == 200:
 
-	if next_page_token_given is not None:
-		response = requests.get(uri, headers={'Content-Type':'application/json'}, params={
-		                        'access_token':access_token, 'syncToken':sync_token, 'pageToken':next_page_token_given})
-	else:
-		response = requests.get(uri, headers={'Content-Type':'application/json'}, params={
-		                        'access_token':access_token, 'syncToken':sync_token})
+        newEvents = response.json()
+        print "newEvents: ", json.dumps(newEvents)
 
-	if response.status_code == 200:
+        if 'nextPageToken' in newEvents and newEvents['nextPageToken']:
+            next_page_token = newEvents['nextPageToken']
+            print "Have a nextPageToken.. re-calling sync calendar method recursively"
+            getNewEvents(uri, uuid, resource_id, next_page_token)
 
-		newEvents = response.json()
-		print "newEvents: ", json.dumps(newEvents)
+        if 'nextSyncToken' in newEvents:
+            next_sync_token = newEvents['nextSyncToken']
+            print "next_sync_token: ", next_sync_token
+            ai_gcal.next_sync_token = next_sync_token
+            ai_gcal.save()
+            print "next_sync_token saved."
 
-		if 'nextPageToken' in newEvents and (newEvents['nextPageToken'] is not None or newEvents['nextPageToken'] != ''):
-			next_page_token = newEvents['nextPageToken']
-			print "Have a nextPageToken.. re-calling sync calendar method recursively"
-			getNewEvents(uri, uuid, resource_id, next_page_token)
+        if 'items' in newEvents and newEvents['items']:
+            if len(newEvents['items']) == 1:
 
-		if 'nextSyncToken' in newEvents:
-			next_sync_token = newEvents['nextSyncToken']
-			print "next_sync_token: ", next_sync_token
+                newEvent = newEvents['items'][0]
 
-			cur.execute(saveNextSyncToken, {'next_sync_token':next_sync_token,
-			            'resource_uri':uri, 'resource_uuid':uuid, 'resource_id':resource_id})
-			conn.commit()
-			print "next_sync_token saved."
+                #### Event Details Overview ####
+                # cancelled Event
+                # status: cancelled
+                # kind: calendar#event
+                # eventId: 6tfas1pil9m79d9v1d1gotb0eo
+                # self-created Event
+                # status: confirmed
+                # startDateTime: 2016-10-11T17:30:00-07:00
+                # endDateTime: 2016-10-11T18:30:00-07:00
+                # kind: calendar#event
+                # eventTitle: fun stuff 3
+                # eventId: hnec4hn7ept4p78i0k18qabei0
+                # htmlLink: https://www.google.com/calendar/event?eid=aG5lYzRobjdlcHQ0cDc4aTBrMThxYWJlaTAgdGF5bG9yQGFwcGJhY2tyLmNvbQ
+                # organizerDisplayName: Taylor Robinson
+                # organizerIsSelf: True
+                # organizerEmail: taylor@appbackr.com
+                # creatorDisplayName: Taylor Robinson
+                # creatorIsSelf: True
+                # creatorEmail: taylor@appbackr.com
+                # invited to someone else's Event
+                # status: confirmed
+                # startDateTime: 2016-10-11T19:00:00-07:00
+                # endDateTime: 2016-10-11T20:00:00-07:00
+                # kind: calendar#event
+                # eventTitle: Breakfast at Tiffany's
+                # eventId: 932hp9b1dqt2c4rf20djt8e3g0
+                # htmlLink: https://www.google.com/calendar/event?eid=OTMyaHA5YjFkcXQyYzRyZjIwZGp0OGUzZzAgdGF5bG9yQGFwcGJhY2tyLmNvbQ
+                # organizerDisplayName: Taylor Robinson
+                # organizerEmail: taylor.howard.robinson@gmail.com
+                # creatorDisplayName: Taylor Robinson
+                # creatorIsSelf: True
+                # creatorEmail: taylor@appbackr.com
 
-		if 'items' in newEvents and newEvents['items'] != []:
-			if len(newEvents['items']) == 1:
+                # also have attendee objects list
+                # responseStatus: needsAction, accepted, declined
+                # self: True
+                # email:
+                # displayName:
+                # organizer: True
 
-				newEvent = newEvents['items'][0]
+                # parse Event Details
+                print "-- Parsing Event Details --"
+                # status .. hoping for 'confirmed'
+                try:
+                    status = newEvent['status']
+                    print 'status:', status
+                except:
+                    status = None
+                # start.dateTime .. timestamp with timezone of start
+                try:
+                    startDateTime = newEvent['start']['dateTime']
+                    print 'startDateTime:', startDateTime
+                except:
+                    startDateTime = None
+                # end.dateTime .. timestamp with timezone of end
+                try:
+                    endDateTime = newEvent['end']['dateTime']
+                    print 'endDateTime:', endDateTime
+                except:
+                    endDateTime = None
+                # kind .. hoping for 'calendar#event'
+                try:
+                    kind = newEvent['kind']
+                    print 'kind:', kind
+                except:
+                    kind = None
+                # summary .. Title of the Event
+                try:
+                    eventTitle = newEvent['summary']
+                    print 'eventTitle:', eventTitle
+                except:
+                    eventTitle = None
+                # description .. description of the Event
+                try:
+                    description = newEvent['description']
+                    print 'description:', description
+                except:
+                    description = None
+                # location .. location of the Event
+                try:
+                    location = newEvent['location']
+                    print 'location:', location
+                except:
+                    location = None
+                # id .. ID of the Event
+                try:
+                    eventId = newEvent['id']
+                    print 'eventId:', eventId
+                except:
+                    eventId = None
+                # htmlLink .. link to the Event
+                try:
+                    htmlLink = newEvent['htmlLink']
+                    print 'htmlLink:', htmlLink
+                except:
+                    htmlLink = None
+                # organizer.displayName .. Name of the Person organizing the
+                # Event
+                try:
+                    organizerDisplayName = newEvent['organizer']['displayName']
+                    print 'organizerDisplayName:', organizerDisplayName
+                except:
+                    organizerDisplayName = None
+                # organizer.self .. Boolean for if I am the person organizing the Event ##
+                # None & False are the same
+                try:
+                    organizerIsSelf = newEvent['organizer']['self']
+                    print 'organizerIsSelf:', organizerIsSelf
+                except:
+                    organizerIsSelf = None
+                # organizer.email .. Email of the Person organizing the Event
+                try:
+                    organizerEmail = newEvent['organizer']['email']
+                    print 'organizerEmail:', organizerEmail
+                except:
+                    organizerEmail = None
+                # I don't know what the difference between an Organizer and a Creator is... ### (creator seems to always be me, organizer is who physically started the event)
+                # creator.displayName .. Name of the Person creating the Event
+                try:
+                    creatorDisplayName = newEvent['creator']['displayName']
+                    print 'creatorDisplayName:', creatorDisplayName
+                except:
+                    creatorDisplayName = None
+                # creator.self .. Boolean for if I am the person creating the Event ##
+                # None & False are the same
+                try:
+                    creatorIsSelf = newEvent['creator']['self']
+                    print 'creatorIsSelf:', creatorIsSelf
+                except:
+                    creatorIsSelf = None
+                # creator.email .. Email of the Person creating the Event
+                try:
+                    creatorEmail = newEvent['creator']['email']
+                    print 'creatorEmail:', creatorEmail
+                except:
+                    creatorEmail = None
+                if 'attendees' in newEvent:
+                    for person in newEvent['attendees']:
+                        if 'self' in person:
+                            if person['self']:
+                                # responseStatus ... needsAction, accepted,
+                                # declined
+                                try:
+                                    responseStatus = person['responseStatus']
+                                    print "responseStatus:", responseStatus
+                                except:
+                                    responseStatus = None
+                else:
+                    responseStatus = 'accepted'
+                # end parsing Event Details
 
-				#### Event Details Overview ####
-				# cancelled Event
-				# status: cancelled
-				# kind: calendar#event
-				# eventId: 6tfas1pil9m79d9v1d1gotb0eo
-				# self-created Event
-				# status: confirmed
-				# startDateTime: 2016-10-11T17:30:00-07:00
-				# endDateTime: 2016-10-11T18:30:00-07:00
-				# kind: calendar#event
-				# eventTitle: fun stuff 3
-				# eventId: hnec4hn7ept4p78i0k18qabei0
-				# htmlLink: https://www.google.com/calendar/event?eid=aG5lYzRobjdlcHQ0cDc4aTBrMThxYWJlaTAgdGF5bG9yQGFwcGJhY2tyLmNvbQ
-				# organizerDisplayName: Taylor Robinson
-				# organizerIsSelf: True
-				# organizerEmail: taylor@appbackr.com
-				# creatorDisplayName: Taylor Robinson
-				# creatorIsSelf: True
-				# creatorEmail: taylor@appbackr.com
-				# invited to someone else's Event
-				# status: confirmed
-				# startDateTime: 2016-10-11T19:00:00-07:00
-				# endDateTime: 2016-10-11T20:00:00-07:00
-				# kind: calendar#event
-				# eventTitle: Breakfast at Tiffany's
-				# eventId: 932hp9b1dqt2c4rf20djt8e3g0
-				# htmlLink: https://www.google.com/calendar/event?eid=OTMyaHA5YjFkcXQyYzRyZjIwZGp0OGUzZzAgdGF5bG9yQGFwcGJhY2tyLmNvbQ
-				# organizerDisplayName: Taylor Robinson
-				# organizerEmail: taylor.howard.robinson@gmail.com
-				# creatorDisplayName: Taylor Robinson
-				# creatorIsSelf: True
-				# creatorEmail: taylor@appbackr.com
+                ##### react to details above #####
+                if status == 'confirmed' and responseStatus == 'accepted':
 
-				# also have attendee objects list
-				# responseStatus: needsAction, accepted, declined
-				# self: True
-				# email:
-				# displayName:
-				# organizer: True
+                    # ping in FBM
+                    newCalendarEventMessage = "I see you've accepted a new Calendar Event!\nTitle: %(event_title)s\nDescription: %(event_description)s\nStart: %(start_time)s\nEnd: %(end_time)s\nLocation: %(event_location)s" % {
+                        'event_title': eventTitle, 'event_description': description, 'start_time': startDateTime, 'end_time': endDateTime, 'event_location': location}
+                i = Integration.objects.get(name='Facebook')
+                ai_fbm = ActiveIntegration.get_object_or_404(
+                    user=ai_gcal.user, integration=i)
+                if ai.external_user_id:
+                    sendMessenger(recipientId=ai_fbm.external_user_id,
+                                  messageText=newCalendarEventMessage)
+                else:
+                    print "This User has not enabled the Facebook Messenger Integration."
+                    return
+            else:
+                print "More than 1 new Calendar Event received."
+                return
+        else:
+            print "no new events"
 
+    elif response.status_code == 401:
 
+        print "outdated access_token\nCalling refresh method"
+        access_token = refreshAuthToken(access_token)
+        print "have new access_token saved...recursively calling getNewEvents"
+        getNewEvents(uri, uuid, resource_id, next_page_token_given)
 
-				# parse Event Details
-				print "-- Parsing Event Details --"
-				# status .. hoping for 'confirmed'
-				try:
-					status = newEvent['status']
-					print 'status:', status
-				except:
-					status = None
-				# start.dateTime .. timestamp with timezone of start
-				try:
-					startDateTime = newEvent['start']['dateTime']
-					print 'startDateTime:', startDateTime
-				except:
-					startDateTime = None
-				# end.dateTime .. timestamp with timezone of end
-				try:
-					endDateTime = newEvent['end']['dateTime']
-					print 'endDateTime:', endDateTime
-				except:
-					endDateTime = None
-				# kind .. hoping for 'calendar#event'
-				try:
-					kind = newEvent['kind']
-					print 'kind:', kind
-				except:
-					kind = None
-				# summary .. Title of the Event
-				try:
-					eventTitle = newEvent['summary']
-					print 'eventTitle:', eventTitle
-				except:
-					eventTitle = None
-				# description .. description of the Event
-				try:
-					description = newEvent['description']
-					print 'description:', description
-				except:
-					description = None
-				# location .. location of the Event
-				try:
-					location = newEvent['location']
-					print 'location:', location
-				except:
-					location = None
-				# id .. ID of the Event
-				try:
-					eventId = newEvent['id']
-					print 'eventId:', eventId
-				except:
-					eventId = None
-				# htmlLink .. link to the Event
-				try:
-					htmlLink = newEvent['htmlLink']
-					print 'htmlLink:', htmlLink
-				except:
-					htmlLink = None
-				# organizer.displayName .. Name of the Person organizing the Event
-				try:
-					organizerDisplayName = newEvent['organizer']['displayName']
-					print 'organizerDisplayName:', organizerDisplayName
-				except:
-					organizerDisplayName = None
-				# organizer.self .. Boolean for if I am the person organizing the Event ##
-				# None & False are the same
-				try:
-					organizerIsSelf = newEvent['organizer']['self']
-					print 'organizerIsSelf:', organizerIsSelf
-				except:
-					organizerIsSelf = None
-				# organizer.email .. Email of the Person organizing the Event
-				try:
-					organizerEmail = newEvent['organizer']['email']
-					print 'organizerEmail:', organizerEmail
-				except:
-					organizerEmail = None
-				# I don't know what the difference between an Organizer and a Creator is... ### (creator seems to always be me, organizer is who physically started the event)
-				# creator.displayName .. Name of the Person creating the Event
-				try:
-					creatorDisplayName = newEvent['creator']['displayName']
-					print 'creatorDisplayName:', creatorDisplayName
-				except:
-					creatorDisplayName = None
-				# creator.self .. Boolean for if I am the person creating the Event ##
-				# None & False are the same
-				try:
-					creatorIsSelf = newEvent['creator']['self']
-					print 'creatorIsSelf:', creatorIsSelf
-				except:
-					creatorIsSelf = None
-				# creator.email .. Email of the Person creating the Event
-				try:
-					creatorEmail = newEvent['creator']['email']
-					print 'creatorEmail:', creatorEmail
-				except:
-					creatorEmail = None
-				if 'attendees' in newEvent:
-					for person in newEvent['attendees']:
-						if 'self' in person:
-							if person['self']:
-								# responseStatus ... needsAction, accepted, declined
-								try:
-									responseStatus = person['responseStatus']
-									print "responseStatus:", responseStatus
-								except:
-									responseStatus = None
-				else:
-					responseStatus = 'accepted'
-				# end parsing Event Details
+    else:
 
-
-				##### react to details above #####
-				if status == 'confirmed' and responseStatus == 'accepted':
-
-					# ping myself in Slack
-					response = requests.post('https://slack.com/api/chat.postMessage', params={
-																				"text": "I see you've accepted a new Calendar Event!\nTitle: %(event_title)s\nDescription: %(event_description)s\nStart: %(start_time)s\nEnd: %(end_time)s\nLocation: %(event_location)s"%{'event_title':eventTitle, 'event_description':description, 'start_time':startDateTime, 'end_time':endDateTime, 'event_location':location},
-																				"attachments": json.dumps([
-																					{
-																						"text": "How can I help you react?",
-																						"fallback": "Looks like I'm temporarily unable to help you, sorry.",
-																						"callback_id": "wopr_game",
-																						"color": "#3AA3E3",
-																						"attachment_type": "default",
-																						"actions": [
-																							{
-																								"name": "food",
-																								"text": "Order Food",
-																								"type": "button",
-																								"value": "food"
-																							},
-																							{
-																								"name": "uber",
-																								"text": "Call an Uber",
-																								"type": "button",
-																								"value": "uber"
-																							},
-																							{
-																								"name": "text",
-																								"text": "Text my Wife",
-																								"style": "danger",
-																								"type": "button",
-																								"value": "war",
-																								"confirm": {
-																									"title": "Are you sure?",
-																									"text": "I will immediately text your Wife at +1(317)809-4648 informing her of the delay.",
-																									"ok_text": "Yes",
-																									"dismiss_text": "No"
-																								}
-																							}
-																						]
-																					}
-																				]),
-																				"channel":"@taylor",
-																				"token":slackTestToken
-																			},
-																			headers={"Content-Type":"application/json"})
-					if 'error' in response:
-						print response
-						print "data:", response.json()
-
-
-
-		else:
-			print "no new events"
-	elif response.status_code == 401:
-
-		print "outdated access_token\nCalling refresh method"
-		access_token = refreshAuthToken(access_token)
-		print "have new access_token saved...recursively calling getNewEvents"
-		getNewEvents(uri, uuid, resource_id)
-
-	else:
-
-		print response
-		print "headers: ", response.headers
-		print "text: ", response.text
-	'''
+        print response
+        print "headers: ", response.headers
+        print "text: ", response.text
 
 
 @csrf_exempt
 def receiveGcal(request):
 
-	print "receiving GCal ping now!"
-	print request
-	if request.method == 'GET':
-		print request.GET
-	else:
-		print request.POST
+    print "receiving GCal ping now!"
 
-	print "printing body text"
+    headers = request.META
+    print "headers: ", headers
 
-	try:
-		print "body: ", request.body
-	except:
-		print "no request.body"
+    try:
+        googleResourceUri = headers['HTTP_X_GOOG_RESOURCE_URI']
+        print "googleResourceUri: ", googleResourceUri
+        googleResourceState = headers['HTTP_X_GOOG_RESOURCE_STATE']
+        print "googleResourceState: ", googleResourceState
+        googleResourceId = headers['HTTP_X_GOOG_RESOURCE_ID']
+        print "googleResourceId: ", googleResourceId
+        googleChannelId = headers['HTTP_X_GOOG_CHANNEL_ID']
+        print "googleChannelId: ", googleChannelId
+        googleMessageNumber = headers['HTTP_X_GOOG_MESSAGE_NUMBER']
+        print "googleMessageNumber: ", googleMessageNumber
+    except:
+        print "error parsing Google Resources..."
+        googleResourceState = 'fail'
 
-	print "printing headers"
-	headers = request.META
-	print "headers: ", headers
+    if googleResourceState == 'sync':
+        # getAllEvents(googleResourceUri, googleChannelId, googleResourceId)
+        print "sync..passing"
 
-	try:
-		googleResourceUri = headers['HTTP_X_GOOG_RESOURCE_URI']
-		print "googleResourceUri: ", googleResourceUri
-		googleResourceState = headers['HTTP_X_GOOG_RESOURCE_STATE']
-		print "googleResourceState: ", googleResourceState
-		googleResourceId = headers['HTTP_X_GOOG_RESOURCE_ID']
-		print "googleResourceId: ", googleResourceId
-		googleChannelId = headers['HTTP_X_GOOG_CHANNEL_ID']
-		print "googleChannelId: ", googleChannelId
-		googleMessageNumber = headers['HTTP_X_GOOG_MESSAGE_NUMBER']
-		print "googleMessageNumber: ", googleMessageNumber
-	except:
-		print "error parsing Google Resources..."
-		googleResourceState = 'fail'
+    elif googleResourceState == 'exists':
+        getNewEvents(googleResourceUri, googleChannelId, googleResourceId)
 
-	if googleResourceState == 'sync':
-		# getAllEvents(googleResourceUri, googleChannelId, googleResourceId)
-		print "sync..passing"
-
-	elif googleResourceState == 'exists':
-		getNewEvents(googleResourceUri, googleChannelId, googleResourceId)
-
-	return HttpResponse("OK")
+    return HttpResponse("OK")
 
 
 @login_required()
 def receiveCalendarOAuth(request):
 
-	inputs = dict(request.GET)
-	print "inputs: ", inputs
+    inputs = dict(request.GET)
+    print "inputs: ", inputs
 
-	tempCode = inputs['code'][0]
+    tempCode = inputs['code'][0]
 
-	# send to CODE<-->Auth_Token URL
-	integration = get_object_or_404(Integration, name='Calendar')
+    # send to CODE<-->Auth_Token URL
+    integration = get_object_or_404(Integration, name='Calendar')
 
-	response = requests.post(integration.token_url, data={"client_id":os.environ['CALENDAR_CLIENT_ID'],
-													"client_secret":os.environ['CALENDAR_CLIENT_SECRET'],
-													"code":tempCode,
-													"redirect_uri":"https://eleos-core.herokuapp.com/receive_calendar_oauth",
-													"grant_type":"authorization_code"})
-	print response.text
-	authData = response.json()
-	try:
-		refreshToken = authData['refresh_token']
-	except:
-		refreshToken = None
-	tokenType = authData['token_type']
-	expiresIn = authData['expires_in']
-	accessToken = authData['access_token']
+    response = requests.post(integration.token_url, data={"client_id": os.environ['CALENDAR_CLIENT_ID'],
+                                                          "client_secret": os.environ['CALENDAR_CLIENT_SECRET'],
+                                                          "code": tempCode,
+                                                          "redirect_uri": "https://eleos-core.herokuapp.com/receive_calendar_oauth",
+                                                          "grant_type": "authorization_code"})
+    print response.text
+    authData = response.json()
+    try:
+        refreshToken = authData['refresh_token']
+    except:
+        refreshToken = None
+    tokenType = authData['token_type']
+    expiresIn = authData['expires_in']
+    accessToken = authData['access_token']
 
-	print request.user.username, integration.name, accessToken
+    print request.user.username, integration.name, accessToken
 
-	# Create new Link
-	activeIntegration, new = ActiveIntegration.objects.get_or_create(user=request.user, integration=integration)
-	if not activeIntegration.access_token:
-		activeIntegration.access_token = accessToken
-		activeIntegration.save()
+    # Create new Link
+    activeIntegration, new = ActiveIntegration.objects.get_or_create(
+        user=request.user, integration=integration)
 
-	print "calling watch calendar method"
+    # add optional details
+    if not activeIntegration.access_token:
+        activeIntegration.access_token = accessToken
+        activeIntegration.save()
+    if not activeIntegration.refresh_token and refreshToken:
+        activeIntegration.refresh_token = refreshToken
+        activeIntegration.save()
+    if not activeIntegration.token_type and tokenType:
+        activeIntegration.token_type = tokenType
+        activeIntegration.save()
+    if not activeIntegration.expires_in and expiresIn:
+        activeIntegration.expires_in = expiresIn
+        activeIntegration.save()
 
-	calendar = getCalendars(accessToken)
+    print "calling watch calendar method"
 
-	if calendar:
+    primaryCalendar = getCalendars(accessToken)
 
-		success, resource_uri, resource_id, resource_uuid = askWatchCalendar(calendar, accessToken)
+    if primaryCalendar:
 
-		if success:
-			print "%s is now being watched for %s!" % (calendar, request.user)
-			print "Need to save these details somewhere...\nresource_uri: %s\nresource_id: %s\nresource_uuid: %s" % (resource_uri, resource_id, resource_uuid)
-		else:
-			return HttpResponse('There seems to have been an error... Please try again.')
+        success, resource_uri, resource_id, resource_uuid = askWatchCalendar(
+            primaryCalendar, accessToken)
 
-	else:
-		return HttpResponse('Failed to find the primary calendar for this user...')
+        if success:
+            activeIntegration.resource_uri = resource_uri
+            activeIntegration.resource_id = resource_id
+            activeIntegration.resource_uuid = resource_uuid
+            activeIntegration.save()
+            print "%s is now being watched for %s!" % (primaryCalendar, request.user)
+        else:
+            return HttpResponse('There seems to have been an error... Please try again.')
 
-	# send back to integrations
-	return redirect('/integrations')
+    else:
+        return HttpResponse('Failed to find the primary calendar for this user...')
+
+    # send back to integrations
+    return redirect('/integrations')
