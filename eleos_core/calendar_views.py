@@ -89,11 +89,11 @@ def stopWatchCalendar(user):
         response = requests.post(stopUri, headers={'Authorization': 'Bearer ' + ai_gcal.access_token, 'Content-Type': 'application/json'},
                                  data=json.dumps({'resource_id': ai_gcal.resource_id, 'id': ai_gcal.resource_uuid}))
         if response.status_code == 200:
-			print "STOP response: ", response.json()
+            print "STOP response: ", response.json()
             return True
         else:
-			print "Error"
-			print "STOP response: ", response.json()
+            print "Error"
+            print "STOP response: ", response.json()
             return False
     else:
         print "No GCal ActiveIntegration found for %s" % user
