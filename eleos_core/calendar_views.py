@@ -81,18 +81,23 @@ def askWatchCalendar(calendar, access_token):
 
 
 def stopWatchCalendar(user):
-	i = get_object_or_404(Integration, name="Calendar")
-	ai_gcal = ActiveIntegration.objects.get(user=user, integration=i)
-	if ai_gcal:
-		stopUri = "https://www.googleapis.com/calendar/v3/channels/stop"
-		response = requests.post(stopUri, headers={'Authorization': 'Bearer ' + ai_gcal.access_token, 'Content-Type': 'application/json'}, data=json.dumps({'resource_id': ai_gcal.resource_id, 'id': ai_gcal.resource_uuid}))
-		if response.status_code == 200:
-			return True
-		else:
-			return False
-	else:
-		print "No GCal ActiveIntegration found for %s" % user
-		return False
+
+    i = get_object_or_404(Integration, name="Calendar")
+    ai_gcal = ActiveIntegration.objects.get(user=user, integration=i)
+    if ai_gcal:
+        stopUri = "https://www.googleapis.com/calendar/v3/channels/stop"
+        response = requests.post(stopUri, headers={'Authorization': 'Bearer ' + ai_gcal.access_token, 'Content-Type': 'application/json'},
+                                 data=json.dumps({'resource_id': ai_gcal.resource_id, 'id': ai_gcal.resource_uuid}))
+        if response.status_code == 200:
+			print "STOP response: ", response.json()
+            return True
+        else:
+			print "Error"
+			print "STOP response: ", response.json()
+            return False
+    else:
+        print "No GCal ActiveIntegration found for %s" % user
+        return False
 
 
 def getCalendars(access_token):

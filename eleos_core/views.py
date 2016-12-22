@@ -35,7 +35,7 @@ def deleteActiveIntegration(request, name):
     integration = get_object_or_404(Integration, name=name)
     activeIntegration = get_object_or_404(ActiveIntegration, integration=integration, user=request.user)
     if integration.name == 'Calendar':
-        success = stopWatchCalendar(requests.user)
+        success = stopWatchCalendar(request.user)
         if success:
             activeIntegration.delete()
         else:
