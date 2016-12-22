@@ -3,7 +3,6 @@ import json
 import uuid
 import random
 import requests
-#import httplib2
 from django.http import HttpResponse
 from .messenger_views import sendMessenger
 from django.contrib.auth.models import User
@@ -79,6 +78,21 @@ def askWatchCalendar(calendar, access_token):
         return True, resource_uri, resource_id, resource_uuid
     else:
         return False, None, None, None
+
+
+def stopWatchCalendar(user):
+	i = get_object_or_404(Integration, name="Calendar")
+	ai_gcal = ActiveIntegration.objects.get(user=user, integration=i)
+	if ai_gcal:
+		stopUri = "https://www.googleapis.com/calendar/v3/channels/stop"
+		response = requests.post(stopUri, headers={'Authorization': 'Bearer ' + ai_gcal.access_token, 'Content-Type': 'application/json'}, data=json.dumps({'resource_id': ai_gcal.resource_id, 'id': ai_gcal.resource_uuid}))
+		if response.status_code == 200:
+			return True
+		else:
+			return False
+	else:
+		print "No GCal ActiveIntegration found for %s" % user
+		return False
 
 
 def getCalendars(access_token):
@@ -303,7 +317,7 @@ def getNewEvents(uri, uuid, resource_id, next_page_token_given=None):
                             user=ai_gcal.user, integration=i)
                     except:
                         ai_fbm = None
-                    if ai.external_user_id:
+                    if ai_fbm:
                         sendMessenger(recipientId=ai_fbm.external_user_id,
                                       messageText=newCalendarEventMessage)
                     else:

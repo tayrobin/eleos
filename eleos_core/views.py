@@ -2,15 +2,15 @@ import os
 import json
 import requests
 from django.urls import reverse
-#from oauth2client import client
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.http import JsonResponse
+from .messenger_views import sendMessenger
+from .calendar_views import stopWatchCalendar
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Integration, Module, ActiveIntegration
-from .messenger_views import sendMessenger
 
 
 @login_required()
@@ -34,7 +34,14 @@ def deleteActiveIntegration(request, name):
 
     integration = get_object_or_404(Integration, name=name)
     activeIntegration = get_object_or_404(ActiveIntegration, integration=integration, user=request.user)
-    activeIntegration.delete()
+    if integration.name == 'Calendar':
+        success = stopWatchCalendar(requests.user)
+        if success:
+            activeIntegration.delete()
+        else:
+            return redirect('/integrations')
+    else:
+        activeIntegration.delete()
 
     return redirect('/integrations')
 
