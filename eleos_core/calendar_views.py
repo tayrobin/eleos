@@ -22,8 +22,8 @@ def refreshAuthToken(access_token):
 
     # get refresh token from server
     integration = get_object_or_404(Integration, name='Calendar')
-    ai_gcal = ActiveIntegration.get_object_or_404(
-        integration=integration, access_token=access_token)
+    ai_gcal = get_object_or_404(
+        ActiveIntegration, access_token=access_token)
     refresh_token = ai_gcal.refresh_token
 
     '''
@@ -103,56 +103,13 @@ def getCalendars(access_token):
     return None
 
 
-def getEvent(event_id, uri, access_token):
-
-    print "Fetching Calendar Event for user"
-
-    # seemingly producing a 404 error, need to read Docs more...
-    eventUrl = uri.strip('?maxResults=250&alt=json') + "/" + event_id
-
-    response = requests.get(eventUrl, headers={
-                            'Content-Type': 'application/json'}, params={'access_token': access_token})
-
-    if response.status_code == 200:
-        eventDetails = response.json()
-        print "eventDetails: ", eventDetails
-    else:
-        print response
-        print "headers: ", response.headers
-        print "text: ", response.text
-
-
-def getAllEvents(uri, uuid, resource_id):
-
-    print "Fetching all Calendar Events for user"
-
-    cur.execute(getAccessToken, {'resource_uri': uri,
-                                 'resource_uuid': uuid, 'resource_id': resource_id})
-    access_token = cur.fetchone()[0]
-
-    response = requests.get(uri, headers={'Content-Type': 'application/json'}, params={
-                            'access_token': access_token, 'maxResults': 10})
-
-    if response.status_code == 200:
-        responseData = response.json()
-        print "response: ", responseData
-
-        next_sync_token = responseData['nextSyncToken']
-        print "next_sync_token: ", next_sync_token
-
-        cur.execute(saveNextSyncToken, {'next_sync_token': next_sync_token,
-                                        'resource_uri': uri, 'resource_uuid': uuid, 'resource_id': resource_id})
-        conn.commit()
-        print "next_sync_token saved."
-
-
 def getNewEvents(uri, uuid, resource_id, next_page_token_given=None):
 
     print "Updating Events since last sync"
 
     integration = get_object_or_404(Integration, name='Calendar')
-    ai_gcal = ActiveIntegration.get_object_or_404(
-        integration=integration, resource_uuid=uuid)
+    ai_gcal = get_object_or_404(
+        ActiveIntegration, resource_uuid=uuid)
     access_token = ai_gcal.access_token
     sync_token = ai_gcal.next_sync_token
 
@@ -338,19 +295,20 @@ def getNewEvents(uri, uuid, resource_id, next_page_token_given=None):
 
                 ##### react to details above #####
                 if status == 'confirmed' and responseStatus == 'accepted':
-
                     # ping in FBM
                     newCalendarEventMessage = "I see you've accepted a new Calendar Event!\nTitle: %(event_title)s\nDescription: %(event_description)s\nStart: %(start_time)s\nEnd: %(end_time)s\nLocation: %(event_location)s" % {
                         'event_title': eventTitle, 'event_description': description, 'start_time': startDateTime, 'end_time': endDateTime, 'event_location': location}
-                i = Integration.objects.get(name='Facebook')
-                ai_fbm = ActiveIntegration.get_object_or_404(
-                    user=ai_gcal.user, integration=i)
-                if ai.external_user_id:
-                    sendMessenger(recipientId=ai_fbm.external_user_id,
-                                  messageText=newCalendarEventMessage)
-                else:
-                    print "This User has not enabled the Facebook Messenger Integration."
-                    return
+                	i = Integration.objects.get(name='Facebook')
+					try:
+						ai_fbm = ActiveIntegration.objects.get(user=ai_gcal.user, integration=i)
+					except:
+						ai_fbm = None
+	                if ai.external_user_id:
+	                    sendMessenger(recipientId=ai_fbm.external_user_id,
+	                                  messageText=newCalendarEventMessage)
+	                else:
+	                    print "This User has not enabled the Facebook Messenger Integration."
+	                    return
             else:
                 print "More than 1 new Calendar Event received."
                 return
