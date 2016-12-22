@@ -93,10 +93,16 @@ def stopWatchCalendar(user):
             return True
         else:
             print "Error"
-            print "STOP response: ", response.json()
+			try:
+	            print "STOP response json: ", response.json()
+				print "STOP response headers: ", response.META
+				print "STOP response body: ", response.body
+				print "STOP response text: ", response.text
+			except:
+				pass
             return False
     else:
-        print "No GCal ActiveIntegration found for %s" % user
+        print "No GCal ActiveIntegration found for User: %s" % user
         return False
 
 
