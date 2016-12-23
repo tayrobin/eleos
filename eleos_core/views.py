@@ -126,7 +126,6 @@ def sendOAuth(request, integrationName):
 			if new:
 				authorize_url = goodreads.get_authorize_url(request_token)
 				print "authorize_url: ", authorize_url
-
 				return redirect(authorize_url)
 			else:
 				return redirect('/integrations')

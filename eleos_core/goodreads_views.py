@@ -19,7 +19,8 @@ def receiveGoodreadsOAuth(request):
 	try:
 		print "GET: ", request.GET
 		data = dict(request.GET)
-		oauth_token = data['oauth_token']
+		oauth_token = data['oauth_token'][0]
+		print "oauth_token: ", oauth_token
 	except:
 		return redirect('/integrations')
 
