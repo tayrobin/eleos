@@ -105,5 +105,7 @@ def sendOAuth(request, integrationName):
                             "&" + "response_type=" + "code" +
                                                     "&" + "access_type=" + "offline" +
                                                     "&" + "prompt=" + "consent")
+        elif integration.name == "Goodreads":
+            return redirect(integration.auth_url + "?" + "oauth_callback=" + "https://eleos-core.herokuapp.com/receive_goodreads_oauth")
         else:
             return redirect(integration.auth_url)  # ++ params

@@ -106,7 +106,6 @@ def stopWatchCalendar(user):
 				errorData = response.json()
 				print "STOP response json: ", errorData
 				print "STOP response headers: ", response.headers
-				print "STOP response text: ", response.text
             except:
                 pass
             return False

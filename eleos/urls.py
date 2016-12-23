@@ -1,7 +1,8 @@
 import eleos_core.views
-import eleos_core.messenger_views
-import eleos_core.foursquare_views
 import eleos_core.calendar_views
+import eleos_core.messenger_views
+import eleos_core.goodreads_views
+import eleos_core.foursquare_views
 from django.contrib import admin
 from django.conf.urls import url, include
 from eleos_core.forms import LoginForm, SignupForm
@@ -43,6 +44,9 @@ urlpatterns = [
     # google calendar
     url(r'^receive_gcal/$',                             eleos_core.calendar_views.receiveGcal, name='receiveGcal'),
     url(r'^receive_calendar_oauth/$',                   eleos_core.calendar_views.receiveCalendarOAuth, name='receiveCalendarOAuth'),
+
+    # goodreads
+    url(r'^receive_goodreads_oauth/$',                  eleos_core.goodreads_views.receiveGoodreadsOAuth, name='receiveGoodreadsOAuth'),
 
     # admin stuff
     url(r'^admin/',                                     include(admin.site.urls)),
