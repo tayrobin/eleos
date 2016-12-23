@@ -7,8 +7,19 @@ from django.contrib.auth.decorators import login_required
 from .models import Integration, ActiveIntegration, OAuthCredentials
 
 
-goodreadsKey = os.environ['GOODREADS_API_KEY']
-goodreadsSecret = os.environ['GOODREADS_CLIENT_SECRET']
+def goodreadsUserId(activeIntegration):
+
+	new_session = OAuth1Session(
+		consumer_key = os.environ['GOODREADS_API_KEY'],
+		consumer_secret = os.environ['GOODREADS_CLIENT_SECRET'],
+		access_token = activeIntegration.access_token,
+		access_token_secret = activeIntegration.access_token_secret,
+		)
+
+	response = new_session.get('https://www.goodreads.com/api/auth_user')
+	print response.text
+
+	# add to activeIntegration
 
 
 @login_required()
@@ -45,4 +56,12 @@ def receiveGoodreadsOAuth(request):
 	print "ACCESS_TOKEN: ", ACCESS_TOKEN
 	print "ACCESS_TOKEN_SECRET: ", ACCESS_TOKEN_SECRET
 
-	return HttpResponse(status=200)
+	# Create new activeIntegration
+	activeIntegration, new = ActiveIntegration.objects.get_or_create(user=request.user, integration=integration, access_token=ACCESS_TOKEN, access_token_secret=ACCESS_TOKEN_SECRET)
+
+	# pull history
+	if new:
+		goodreadsUserId(activeIntegration)
+
+	# send back to integrations
+	return redirect('/integrations')
