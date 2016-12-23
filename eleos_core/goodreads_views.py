@@ -47,6 +47,8 @@ def receiveGoodreadsOAuth(request):
 
 	# head_auth=True is important here; this doesn't work with oauth2 for some reason
 	request_token, request_token_secret = goodreads.get_request_token(header_auth=True)
+	print "request_token: ", request_token
+	print "request_token_secret: ", request_token_secret
 
 	session = goodreads.get_auth_session(request_token, request_token_secret)
 
