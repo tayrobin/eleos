@@ -106,6 +106,17 @@ def sendOAuth(request, integrationName):
                                                     "&" + "access_type=" + "offline" +
                                                     "&" + "prompt=" + "consent")
         elif integration.name == "Goodreads":
-            return redirect(integration.auth_url + "?" + "oauth_callback=" + "https://eleos-core.herokuapp.com/receive_goodreads_oauth")
+
+            # request token
+            request_token_url = 'http://www.goodreads.com/oauth/request_token'
+            response = requests.get(request_token_url, params={'consumer_key': os.environ['GOODREADS_API_KEY'], 'consumer_secret': os.environ['GOODREADS_CLIENT_SECRET']})
+            print "goodreads request token response: ", response.json()
+
+            # parse token
+            token = ""
+
+            # send user to OAuth screen with token
+            return redirect(integration.auth_url + "?" + "oauth_callback=" + "https://eleos-core.herokuapp.com/receive_goodreads_oauth" +
+                            "&" + "oauth_token=" + token)
         else:
             return redirect(integration.auth_url)  # ++ params

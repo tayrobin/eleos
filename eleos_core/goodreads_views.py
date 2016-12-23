@@ -23,4 +23,8 @@ def receiveGoodreadsOAuth(request):
 
 	integration = get_object_or_404(Integration, name="Goodreads")
 
+	# exchange code for access_token
+	response = requests.get(integration.token_url, params={})
+	print "access_token response: ", response.json()
+
 	return HttpResponse(status=200)
