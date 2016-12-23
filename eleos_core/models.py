@@ -65,3 +65,8 @@ class ActiveIntegration(models.Model):
 
     def __str__(self):
         return "%s <--> %s" % (self.user.username, self.integration.name)
+
+class OAuthCredentials(models.Model):
+    """A generated Token/Secret credential pair for an OAuth Integration."""
+    request_token = models.TextField(blank=True, default=None, null=True)
+    request_token_secret = models.TextField(blank=True, default=None, null=True)

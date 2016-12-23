@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rauth.service import OAuth1Service, OAuth1Session
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Integration, Module, ActiveIntegration
+from .models import Integration, Module, ActiveIntegration, OAuthCredentials
 
 
 @login_required()
@@ -121,10 +121,14 @@ def sendOAuth(request, integrationName):
 			request_token, request_token_secret = goodreads.get_request_token(header_auth=True)
 			print "request_token: ", request_token
 			print "request_token_secret: ", request_token_secret
+			oAuthCredentials, new = OAuthCredentials.objects.get_or_create(request_token=request_token, request_token_secret=request_token_secret)
 
-			authorize_url = goodreads.get_authorize_url(request_token)
-			print "authorize_url: ", authorize_url
+			if new:
+				authorize_url = goodreads.get_authorize_url(request_token)
+				print "authorize_url: ", authorize_url
 
-			return redirect(authorize_url)
+				return redirect(authorize_url)
+			else:
+				return redirect('/integrations')
 		else:
 			return redirect(integration.auth_url)  # ++ params
