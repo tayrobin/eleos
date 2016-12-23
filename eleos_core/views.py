@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from .messenger_views import sendMessenger
 from .calendar_views import stopWatchCalendar
 from django.views.decorators.csrf import csrf_exempt
+from rauth.service import OAuth1Service, OAuth1Session
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Integration, Module, ActiveIntegration
@@ -105,12 +106,16 @@ def sendOAuth(request, integrationName):
                             "&" + "response_type=" + "code" +
                                                     "&" + "access_type=" + "offline" +
                                                     "&" + "prompt=" + "consent")
+        '''
         elif integration.name == "Goodreads":
 
             # request token
             request_token_url = 'http://www.goodreads.com/oauth/request_token'
             response = requests.get(request_token_url, params={'consumer_key': os.environ['GOODREADS_API_KEY'], 'consumer_secret': os.environ['GOODREADS_CLIENT_SECRET']})
-            print "goodreads request token response: ", response.json()
+            try:
+                print "goodreads request token response: ", response.json()
+            except:
+                print "goodreads request token text response: ", response.text
 
             # parse token
             token = ""
@@ -118,5 +123,21 @@ def sendOAuth(request, integrationName):
             # send user to OAuth screen with token
             return redirect(integration.auth_url + "?" + "oauth_callback=" + "https://eleos-core.herokuapp.com/receive_goodreads_oauth" +
                             "&" + "oauth_token=" + token)
+        '''
+        elif integration.name == "Goodreads":
+            goodreads = OAuth1Service(
+                consumer_key=os.environ['GOODREADS_API_KEY'],
+                consumer_secret=os.environ['GOODREADS_CLIENT_SECRET'],
+                name='goodreads',
+                request_token_url='http://www.goodreads.com/oauth/request_token',
+                authorize_url='http://www.goodreads.com/oauth/authorize',
+                access_token_url='http://www.goodreads.com/oauth/access_token',
+                base_url='http://www.goodreads.com/'
+                )
+
+            # head_auth=True is important here; this doesn't work with oauth2 for some reason
+            request_token, request_token_secret = goodreads.get_request_token(header_auth=True)
+
+            return redirect(goodreads.get_authorize_url(request_token))
         else:
             return redirect(integration.auth_url)  # ++ params
