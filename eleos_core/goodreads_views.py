@@ -21,18 +21,18 @@ def receiveGoodreadsOAuth(request):
 		data = dict(request.GET)
 		oauth_token = data['oauth_token']
 	except:
-		pass
+		return redirect('/integrations')
 
 	integration = get_object_or_404(Integration, name="Goodreads")
 
 	# exchange code for access_token
 	response = requests.get(integration.token_url, params={'oauth_token': oauth_token})
 	try:
-		print "access_token response: ", response.json()
+		data = response.json()
+		print "access_token response: ", data
 	except:
 		print "access_token response text: ", response.text
 
-	'''
 	goodreads = OAuth1Service(
 		consumer_key=os.environ['GOODREADS_API_KEY'],
         consumer_secret=os.environ['GOODREADS_CLIENT_SECRET'],
@@ -51,6 +51,7 @@ def receiveGoodreadsOAuth(request):
 	# these values are what you need to save for subsequent access.
 	ACCESS_TOKEN = session.access_token
 	ACCESS_TOKEN_SECRET = session.access_token_secret
-	'''
+	print "ACCESS_TOKEN: ", ACCESS_TOKEN
+	print "ACCESS_TOKEN_SECRET: ", ACCESS_TOKEN_SECRET
 
 	return HttpResponse(status=200)
