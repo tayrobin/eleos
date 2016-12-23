@@ -1,35 +1,38 @@
 import os
 import requests
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from .models import Integration, ActiveIntegration
 from rauth.service import OAuth1Service, OAuth1Session
+from django.contrib.auth.decorators import login_required
 
 
 goodreadsKey = os.environ['GOODREADS_API_KEY']
 goodreadsSecret = os.environ['GOODREADS_CLIENT_SECRET']
 
 
+@login_required()
 def receiveGoodreadsOAuth(request):
 
 	print "-- receiving Goodreads OAuth --"
 
 	try:
-		print request.GET
-	except:
-		pass
-
-	try:
-		print request.POST
+		print "GET: ", request.GET
+		data = dict(request.GET)
+		oauth_token = data['oauth_token']
 	except:
 		pass
 
 	integration = get_object_or_404(Integration, name="Goodreads")
 
-	'''
 	# exchange code for access_token
-	response = requests.get(integration.token_url, params={})
-	print "access_token response: ", response.json()
-	'''
+	response = requests.get(integration.token_url, params={'oauth_token': oauth_token})
+	try:
+		print "access_token response: ", response.json()
+	except:
+		print "access_token response text: ", response.text
 
+	'''
 	goodreads = OAuth1Service(
 		consumer_key=os.environ['GOODREADS_API_KEY'],
         consumer_secret=os.environ['GOODREADS_CLIENT_SECRET'],
@@ -48,5 +51,6 @@ def receiveGoodreadsOAuth(request):
 	# these values are what you need to save for subsequent access.
 	ACCESS_TOKEN = session.access_token
 	ACCESS_TOKEN_SECRET = session.access_token_secret
+	'''
 
 	return HttpResponse(status=200)
