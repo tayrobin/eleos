@@ -26,7 +26,9 @@ def receiveGoodreadsOAuth(request):
 	integration = get_object_or_404(Integration, name="Goodreads")
 
 	# exchange code for access_token
-	response = requests.get(integration.token_url, params={'oauth_token': oauth_token})
+	response = requests.get(integration.token_url, params={'oauth_token': oauth_token,
+															'consumer_key': os.environ['GOODREADS_API_KEY'],
+															'consumer_secret': os.environ['GOODREADS_CLIENT_SECRET']})
 	try:
 		data = response.json()
 		print "access_token response: ", data
