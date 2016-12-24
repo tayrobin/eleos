@@ -18,7 +18,7 @@ def getUsersBooks(activeIntegration):
 		)
 
 	try:
-		response = new_session.get('https://www.goodreads.com/review/list/'+activeIntegration.external_user_id+'.xml?'+'v='+'2')
+		response = new_session.get('https://www.goodreads.com/review/list/'+activeIntegration.external_user_id+'.xml?v=2'+'&key='+os.environ['GOODREADS_API_KEY'])
 		print "%(user)s's Books:"%{'user':activeIntegration.user}
 		print response.text
 	except:
