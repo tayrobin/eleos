@@ -1,10 +1,27 @@
 import os
 import requests
+from xml.etree import ElementTree
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
 from rauth.service import OAuth1Service, OAuth1Session
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Integration, ActiveIntegration, OAuthCredentials
+
+
+def getUsersBooks(activeIntegration):
+
+	new_session = OAuth1Session(
+		consumer_key = os.environ['GOODREADS_API_KEY'],
+		consumer_secret = os.environ['GOODREADS_CLIENT_SECRET'],
+		access_token = activeIntegration.access_token,
+		access_token_secret = activeIntegration.access_token_secret,
+		)
+
+	try:
+		response = new_session.get('https://www.goodreads.com/review/list', params={'v':2, 'id':activeIntegration.external_user_id})
+		print response.text
+	except:
+		print "error getting the user %(user)s's books" % {'user': activeIntegration.user}
 
 
 def goodreadsUserId(activeIntegration):
@@ -18,8 +35,17 @@ def goodreadsUserId(activeIntegration):
 
 	response = new_session.get('https://www.goodreads.com/api/auth_user')
 	print response.text
+	
+	try:
+		tree = ElementTree.fromstring(response.text)
+		userId = tree.find('user').get('id')
+		if not activeIntegration.external_user_id:
+			activeIntegration.external_user_id = userId
+			activeIntegration.save()
 
-	# add to activeIntegration
+			getUsersBooks(activeIntegration)
+	except:
+		print "error parsing response tree"
 
 
 @login_required()

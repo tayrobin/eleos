@@ -119,13 +119,10 @@ def sendOAuth(request, integrationName):
 
 			# head_auth=True is important here; this doesn't work with oauth2 for some reason
 			request_token, request_token_secret = goodreads.get_request_token(header_auth=True)
-			print "request_token: ", request_token
-			print "request_token_secret: ", request_token_secret
 			oAuthCredentials, new = OAuthCredentials.objects.get_or_create(request_token=request_token, request_token_secret=request_token_secret)
 
 			if new:
 				authorize_url = goodreads.get_authorize_url(request_token)
-				print "authorize_url: ", authorize_url
 				return redirect(authorize_url)
 			else:
 				return redirect('/integrations')
