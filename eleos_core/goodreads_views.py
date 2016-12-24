@@ -18,7 +18,8 @@ def getUsersBooks(activeIntegration):
 		)
 
 	try:
-		response = new_session.get('https://www.goodreads.com/review/list/'+activeIntegration.external_user_id+'.xml?v=2'+'&key='+os.environ['GOODREADS_API_KEY'])
+		#response = new_session.get('https://www.goodreads.com/review/list/'+activeIntegration.external_user_id+'.xml?v=2'+'&key='+os.environ['GOODREADS_API_KEY'])
+		response = requests.get('https://www.goodreads.com/review/list/'+activeIntegration.external_user_id+'.xml?v=2'+'&key='+os.environ['GOODREADS_API_KEY'])
 		print "%(user)s's Books:"%{'user':activeIntegration.user}
 		print response.text
 	except:
@@ -35,7 +36,6 @@ def goodreadsUserId(activeIntegration):
 		)
 
 	response = new_session.get('https://www.goodreads.com/api/auth_user')
-	print response.text
 	
 	try:
 		tree = ElementTree.fromstring(response.text)
@@ -47,7 +47,8 @@ def goodreadsUserId(activeIntegration):
 
 			getUsersBooks(activeIntegration)
 	except:
-		print "error parsing response tree"
+		print "error parsing response userId tree"
+		print response.text
 
 
 @login_required()
