@@ -18,7 +18,7 @@ def getUsersBooks(activeIntegration):
 		)
 
 	try:
-		response = new_session.get('https://www.goodreads.com/review/list?'+'v='+'2'+'&'+'id='+activeIntegration.external_user_id})
+		response = new_session.get('https://www.goodreads.com/review/list?'+'v='+'2'+'&'+'id='+activeIntegration.external_user_id)
 		print "%(user)s's Books:\n"%{'user':activeIntegration.user}, response.text
 	except:
 		print "error getting the user %(user)s's books" % {'user': activeIntegration.user}
