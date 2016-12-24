@@ -18,8 +18,8 @@ def getUsersBooks(activeIntegration):
 		)
 
 	try:
-		response = new_session.get('https://www.goodreads.com/review/list', params={'v':2, 'id':activeIntegration.external_user_id})
-		print response.text
+		response = new_session.get('https://www.goodreads.com/review/list?'+'v='+'2'+'&'+'id='+activeIntegration.external_user_id})
+		print "%(user)s's Books:\n"%{'user':activeIntegration.user}, response.text
 	except:
 		print "error getting the user %(user)s's books" % {'user': activeIntegration.user}
 
@@ -39,6 +39,7 @@ def goodreadsUserId(activeIntegration):
 	try:
 		tree = ElementTree.fromstring(response.text)
 		userId = tree.find('user').get('id')
+		print "%(user)s's Goodreads userId: "%{'user':activeIntegration.user}, userId
 		if not activeIntegration.external_user_id:
 			activeIntegration.external_user_id = userId
 			activeIntegration.save()
