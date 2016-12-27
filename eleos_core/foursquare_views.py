@@ -21,7 +21,10 @@ def foursquareCheckin(request):
 	swarmUserId = dataJson['user']['id']
 	venueName = dataJson['venue']['name']
 
-	print "@%s went to %s" % (swarmUserId, venueName)
+	try:
+		print "@%s went to %s" % (swarmUserId, venueName)
+	except:
+		print "weird characters in venueName"
 
 	facebook = Integration.objects.get(name='Facebook')
 	swarm = Integration.objects.get(name='Swarm')
