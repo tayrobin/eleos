@@ -94,3 +94,6 @@ class GiftedMoment(models.Model):
         default='ENT',
     )
 
+    def __str__(self):
+        return "%(creator)s recommends %(payload)s to %(recipient)s." % {'creator': self.creator, 'payload': self.payload, 'recipient': self.recipient}
+        
