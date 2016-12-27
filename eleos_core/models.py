@@ -94,6 +94,6 @@ class GiftedMoment(models.Model):
         default='ENT',
     )
 
-    def __str__(self):
-        return "%s recommends %s to %s in %s Moments." % (self.creator, self.payload, self.recipient, self.context)
+    def __unicode__(self):
+        return "%s recommends %s to %s in %s Moments." % (self.creator, self.payload, self.recipient, self.get_context_display())
         
