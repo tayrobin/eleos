@@ -41,6 +41,7 @@ def foursquareCheckin(request):
 
 	# send intro message
 	if False:
+		pass
 	else:
 		try:
 			sendMessenger(recipientId=ai_facebook.external_user_id, messageText="Nice checkin at %s!"%venueName)
