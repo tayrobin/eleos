@@ -77,9 +77,9 @@ class OAuthCredentials(models.Model):
 
 class GiftedMoment(models.Model):
     """A Moment created by one User for another User at a specific time/place/context."""
-    creator = models.ManyToManyField(User, blank=False, related_name="creator")
-    recipient = models.ManyToManyField(User, blank=False, related_name="recipient")
-    payload = models.ManyToManyField(Payload, blank=False)
+    creator = models.ForeignKey(User, related_name='creator')
+    recipient = models.ForeignKey(User, related_name='recipient')
+    payload = models.ForeignKey(Payload)
     endorsement = models.TextField(blank=True, default=None, null=True)
 
     CONTEXT_CHOICES = (
