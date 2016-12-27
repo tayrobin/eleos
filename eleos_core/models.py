@@ -25,6 +25,7 @@ class Payload(models.Model):
     image_url = models.TextField(blank=True, default=None, null=True)
     length = models.DurationField("The expected length of time, in seconds, Payload will fill.", blank=True, default=None, null=True)
     deliverable = models.TextField(blank=True, default=None, null=True)
+    deliverable_url = models.TextField(blank=True, default=None, null=True)
 
     class Meta:
         ordering = ['length']
@@ -67,7 +68,29 @@ class ActiveIntegration(models.Model):
     def __str__(self):
         return "%s <--> %s" % (self.user.username, self.integration.name)
 
+
 class OAuthCredentials(models.Model):
     """A generated Token/Secret credential pair for an OAuth Integration."""
     request_token = models.TextField(blank=True, default=None, null=True)
     request_token_secret = models.TextField(blank=True, default=None, null=True)
+
+
+class GiftedMoment(models.Model):
+    """A Moment created by one User for another User at a specific time/place/context."""
+    creator = models.ManyToManyField(User, blank=False, related_name="creator")
+    recipient = models.ManyToManyField(User, blank=False, related_name="recipient")
+    payload = models.ManyToManyField(Payload, blank=False)
+    endorsement = models.TextField(blank=True, default=None, null=True)
+
+    CONTEXT_CHOICES = (
+        ('PRD', 'Productivity'),
+        ('ENT', 'Entertainment'),
+        ('INS', 'Inspiration'),
+        ('EDU', 'Education'),
+    )
+    context = models.CharField(
+        max_length=2,
+        choices=CONTEXT_CHOICES,
+        default='ENT',
+    )
+
