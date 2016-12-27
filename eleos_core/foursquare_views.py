@@ -46,7 +46,7 @@ def foursquareCheckin(request):
 	# deliver Moment (or generic response)
 	if len(giftedMoments) > 0:
 		giftedMoment = giftedMoments[0]
-		if giftedMoment.deliverable_url:
+		if giftedMoment.payload.deliverable_url:
 			deliver = giftedMoment.payload.deliverable_url
 		else:
 			deliver = giftedMoment.payload.deliverable
