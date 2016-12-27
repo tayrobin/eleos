@@ -89,7 +89,7 @@ class GiftedMoment(models.Model):
         ('EDU', 'Education'),
     )
     context = models.CharField(
-        max_length=2,
+        max_length=3,
         choices=CONTEXT_CHOICES,
         default='ENT',
     )
