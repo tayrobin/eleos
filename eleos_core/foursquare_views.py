@@ -58,6 +58,8 @@ def foursquareCheckin(request):
 		try:
 			messageId = sendMessenger(recipientId=ai_facebook.external_user_id, messageText=message)
 			if messageId:
+				if '.' and ':' in messageId:
+					messageId = messageId.split('.')[1].split(':')[0]
 				giftedMoment.fbm_message_id = messageId
 				giftedMoment.fbm_message_sent_at = timezone.now()
 				giftedMoment.save()
