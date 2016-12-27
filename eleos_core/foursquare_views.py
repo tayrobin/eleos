@@ -2,6 +2,7 @@ import os
 import json
 import requests
 from django.urls import reverse
+from django.utils import timezone
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.http import JsonResponse
@@ -44,7 +45,7 @@ def foursquareCheckin(request):
 		print "Looks like %s hasn't given permission for FBM." % ai_swarm.user
 		return HttpResponse(status=201)
 
-	giftedMoments = GiftedMoment.objects.filter(recipient=ai_swarm.user)
+	giftedMoments = GiftedMoment.objects.filter(recipient=ai_swarm.user, fbm_message_id=None)
 
 	# deliver Moment (or generic response)
 	if len(giftedMoments) > 0:
@@ -53,11 +54,15 @@ def foursquareCheckin(request):
 			deliver = giftedMoment.payload.deliverable_url
 		else:
 			deliver = giftedMoment.payload.deliverable
-		hours, remainder = divmod(giftedMoment.payload.length.seconds, 3600)
-		minutes, seconds = divmod(remainder, 60)
-		message = '%(creator)s created a %(minutes)s:%(seconds)s minute %(context)s Moment for you:\n"%(endorsement)s"\n%(deliverable)s' % {'creator':giftedMoment.creator, 'minutes':minutes, 'seconds':seconds, 'context':giftedMoment.get_context_display(), 'endorsement':giftedMoment.endorsement, 'deliverable':deliver}
+		message = '%(creator)s created a %(length)s minute %(context)s Moment for you:\n"%(endorsement)s"\n%(deliverable)s' % {'creator':giftedMoment.creator, 'length':giftedMoment.payload.length, 'context':giftedMoment.get_context_display(), 'endorsement':giftedMoment.endorsement, 'deliverable':deliver}
 		try:
-			sendMessenger(recipientId=ai_facebook.external_user_id, messageText=message)
+			messageId = sendMessenger(recipientId=ai_facebook.external_user_id, messageText=message)
+			if messageId:
+				giftedMoment.fbm_message_id = messageId
+				giftedMoment.fbm_message_sent_at = timezone.now()
+				giftedMoment.save()
+			else:
+				print "No messageId returned, delivery must have failed."
 		except:
 			return HttpResponse(status=201)
 	else:

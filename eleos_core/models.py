@@ -82,6 +82,12 @@ class GiftedMoment(models.Model):
     payload = models.ForeignKey(Payload)
     endorsement = models.TextField(blank=True, default=None, null=True)
 
+    # FBM tracking
+    fbm_message_id = models.TextField(blank=True, default=None, null=True)
+    fbm_message_sent_at = models.DateTimeField(default=None)
+    fbm_read_status = models.BooleanField(default=False)
+    fbm_message_read_at = models.DateTimeField(default=None)
+
     CONTEXT_CHOICES = (
         ('PRD', 'Productivity'),
         ('ENT', 'Entertainment'),
@@ -93,6 +99,17 @@ class GiftedMoment(models.Model):
         choices=CONTEXT_CHOICES,
         default='ENT',
     )
+
+    # auto-timestamps
+    created_at = models.DateTimeField(editable=False)
+    updated_at = models.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        """On save, update timestamps."""
+        if not self.id:
+            self.created_at = timezone.now()
+        self.updated_at = timezone.now()
+        return super(GiftedMoment, self).save(*args, **kwargs)
 
     def __unicode__(self):
         return "%s recommends %s to %s in %s Moments." % (self.creator, self.payload, self.recipient, self.get_context_display())

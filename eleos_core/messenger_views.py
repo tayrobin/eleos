@@ -2,12 +2,13 @@ import os
 import json
 import random
 import requests
+from django.utils import timezone
 from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-from .models import ActiveIntegration, Integration, Module
+from .models import ActiveIntegration, Integration, Module, GiftedMoment
 
 
 def callSendAPI(messageData):
@@ -23,13 +24,17 @@ def callSendAPI(messageData):
 
     print "Successfully sent generic message with id %s to recipient %s" % (messageId, recipientId)
 
+    return messageId
+
 
 def sendMessenger(recipientId, messageText):
 
     messageData = {'recipient': {'id': recipientId},
                    'message': {'text': messageText}}
 
-    callSendAPI(messageData)
+    messageId = callSendAPI(messageData)
+
+    return messageId
 
 
 def showModules(recipientId, user):
@@ -339,6 +344,18 @@ def receiveMessengerWebhook(request):
                         ai_fb = ActiveIntegration.objects.get(
                             external_user_id=event['sender']['id'])
                         print "%s has read my message ID: %s." % (ai_fb.user, event['read']['watermark'])
+                        giftedMoments = GiftedMoment.objects.filter(fbm_message_id=event['read']['watermark'])
+                        if len(giftedMoments) > 0:
+                            if len(giftedMoments) > 1:
+                                print "More than 1 GiftedMoment with this FBM Message ID found."
+                                print giftedMoments
+                            else:
+                                giftedMoment = giftedMoments[0]
+                                giftedMoment.fbm_read_status = True
+                                giftedMoment.fbm_message_read_at = timezone.now()
+                                giftedMoment.save()
+                        else:
+                            print "No GiftedMoment with this FBM Message ID found."
                     except:
                         print "Message recevied from unknown User."
                 else:
