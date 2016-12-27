@@ -83,10 +83,10 @@ class GiftedMoment(models.Model):
     endorsement = models.TextField(blank=True, default=None, null=True)
 
     # FBM tracking
-    fbm_message_id = models.TextField(blank=True, default=None, null=True)
-    fbm_message_sent_at = models.DateTimeField(default=None)
-    fbm_read_status = models.BooleanField(default=False)
-    fbm_message_read_at = models.DateTimeField(default=None)
+    fbm_message_id = models.TextField(blank=True, default=None, null=True, editable=False)
+    fbm_message_sent_at = models.DateTimeField(default=None, editable=False)
+    fbm_read_status = models.BooleanField(default=False, editable=False)
+    fbm_message_read_at = models.DateTimeField(default=None, editable=False)
 
     CONTEXT_CHOICES = (
         ('PRD', 'Productivity'),
@@ -102,7 +102,7 @@ class GiftedMoment(models.Model):
 
     # auto-timestamps
     created_at = models.DateTimeField(editable=False)
-    updated_at = models.DateTimeField()
+    updated_at = models.DateTimeField(editable=False)
 
     def save(self, *args, **kwargs):
         """On save, update timestamps."""
