@@ -95,5 +95,5 @@ class GiftedMoment(models.Model):
     )
 
     def __str__(self):
-        return "{} recommends {} to {} in {} Moments.".format(self.creator, self.payload, self.recipient, self.context)
+        return "%s recommends %s to %s in %s Moments." % (self.creator, self.payload, self.recipient, self.context)
         
