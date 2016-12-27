@@ -53,7 +53,9 @@ def foursquareCheckin(request):
 			deliver = giftedMoment.payload.deliverable_url
 		else:
 			deliver = giftedMoment.payload.deliverable
-		message = '%(creator)s created a %(length)s minute %(context)s Moment for you:\n"%(endorsement)s"\n%(deliverable)s' % {'creator':giftedMoment.creator, 'length':giftedMoment.payload.length, 'context':giftedMoment.get_context_display(), 'endorsement':giftedMoment.endorsement, 'deliverable':deliver}
+		hours, remainder = divmod(giftedMoment.payload.length.seconds, 3600)
+		minutes, seconds = divmod(remainder, 60)
+		message = '%(creator)s created a %(minutes)s:%(seconds)s minute %(context)s Moment for you:\n"%(endorsement)s"\n%(deliverable)s' % {'creator':giftedMoment.creator, 'minutes':minutes, 'seconds':seconds, 'context':giftedMoment.get_context_display(), 'endorsement':giftedMoment.endorsement, 'deliverable':deliver}
 		try:
 			sendMessenger(recipientId=ai_facebook.external_user_id, messageText=message)
 		except:
