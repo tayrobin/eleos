@@ -14,7 +14,7 @@ class Integration(models.Model):
     token_url = models.TextField(blank=True, default=None, null=True)
     users = models.ManyToManyField(User, through='ActiveIntegration', blank=True)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.name
 
 
@@ -30,7 +30,7 @@ class Payload(models.Model):
     class Meta:
         ordering = ['length']
 
-    def __str__(self):
+    def __unicode__(self):
         return "[%s] %s" % (self.length, self.name)
 
 
@@ -44,7 +44,7 @@ class Module(models.Model):
     possible_payloads = models.ManyToManyField(Payload, blank=True)
     users = models.ManyToManyField(User, blank=True)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.name
 
 
@@ -65,7 +65,7 @@ class ActiveIntegration(models.Model):
     resource_uuid = models.TextField("My UUID for the resource, created upon activation.", blank=True, default=None, null=True)
     next_sync_token = models.TextField("A bookmark for Google Calendar events.", blank=True, default=None, null=True)
 
-    def __str__(self):
+    def __unicode__(self):
         return "%s <--> %s" % (self.user.username, self.integration.name)
 
 

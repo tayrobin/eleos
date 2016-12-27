@@ -26,12 +26,14 @@ def foursquareCheckin(request):
 	facebook = Integration.objects.get(name='Facebook')
 	swarm = Integration.objects.get(name='Swarm')
 
+	# get Swarm ActiveIntegration
 	try:
 		ai_swarm = ActiveIntegration.objects.get(external_user_id=swarmUserId, integration=swarm)
 	except:
 		print "Unable to find ActiveIntegration for this User."
 		return HttpResponse(status=201)
 
+	# get FBM ActiveIntegration
 	try:
 		ai_facebook = ActiveIntegration.objects.get(user=ai_swarm.user, integration=facebook)
 		print "Now have ActiveIntegrations for both Swarm and FBM for %s" % ai_facebook.user
@@ -39,9 +41,20 @@ def foursquareCheckin(request):
 		print "Looks like %s hasn't given permission for FBM." % ai_swarm.user
 		return HttpResponse(status=201)
 
-	# send intro message
-	if False:
-		pass
+	giftedMoments = GiftedMoment.objects.filter(recipient=ai_swarm.user)
+
+	# deliver Moment (or generic response)
+	if len(giftedMoments) > 0:
+		giftedMoment = giftedMoments[0]
+		if giftedMoment.deliverable_url:
+			deliver = giftedMoment.payload.deliverable_url
+		else:
+			deliver = giftedMoment.payload.deliverable
+		message = '%(creator)s created a %(length)s minute %(context)s Moment for you:\n"%(endorsement)s"\n%(deliverable)s' % {'creator':giftedMoment.creator, 'length':giftedMoment.payload.length, 'context':giftedMoment.get_context_display(), 'endorsement':giftedMoment.endorsement, 'deliverable':deliver}
+		try:
+			sendMessenger(recipientId=ai_facebook.external_user_id, messageText=message)
+		except:
+			return HttpResponse(status=201)
 	else:
 		try:
 			sendMessenger(recipientId=ai_facebook.external_user_id, messageText="Nice checkin at %s!"%venueName)
