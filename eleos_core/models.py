@@ -84,6 +84,7 @@ class GiftedMoment(models.Model):
 
     # FBM tracking
     fbm_message_id = models.TextField(blank=True, default=None, null=True, editable=False)
+    fbm_sent_status = models.BooleanField(default=False, editable=False)
     fbm_message_sent_at = models.DateTimeField(default=None, editable=False, null=True)
     fbm_read_status = models.BooleanField(default=False, editable=False)
     fbm_message_read_at = models.DateTimeField(default=None, editable=False, null=True)

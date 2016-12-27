@@ -61,6 +61,7 @@ def foursquareCheckin(request):
 				if '.' and ':' in messageId:
 					messageId = messageId.split('.')[1].split(':')[0]
 				giftedMoment.fbm_message_id = messageId
+				giftedMoment.fbm_sent_status = True
 				giftedMoment.fbm_message_sent_at = timezone.now()
 				giftedMoment.save()
 			else:
