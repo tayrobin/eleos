@@ -127,8 +127,8 @@ def foursquareCheckin(request):
 
         if messageData:
             try:
-            	messageId = callSendAPI(messageData)
-            	#messageId = sendMessenger(recipientId=ai_facebook.external_user_id, messageText=message)
+                messageId = callSendAPI(messageData)
+                #messageId = sendMessenger(recipientId=ai_facebook.external_user_id, messageText=message)
                 if messageId:
                     if '.' and ':' in messageId:
                         messageId = messageId.split('.')[1].split(':')[0]
@@ -139,7 +139,7 @@ def foursquareCheckin(request):
                 else:
                     print "No messageId returned, delivery must have failed."
             except:
-				print "Error calling callSendAPI()"
+                print "Error calling callSendAPI()"
                 return HttpResponse(status=201)
         else:
             print "messageData not successfully formed."
@@ -148,7 +148,7 @@ def foursquareCheckin(request):
             sendMessenger(recipientId=ai_facebook.external_user_id,
                           messageText="Nice checkin at %s!" % venueName)
         except:
-			print "Error calling sendMessenger()"
+            print "Error calling sendMessenger()"
             return HttpResponse(status=201)
 
     return HttpResponse(status=201)
