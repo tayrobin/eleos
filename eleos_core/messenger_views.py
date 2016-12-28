@@ -19,8 +19,13 @@ def callSendAPI(messageData):
                              'access_token': os.environ['PAGE_ACCESS_TOKEN']})
     data = response.json()
 
-    recipientId = data['recipient_id']
-    messageId = data['message_id']
+    try:
+        recipientId = data['recipient_id']
+        messageId = data['message_id']
+    except:
+        recipientId = None
+        messageId = None
+        print data
 
     print "Successfully sent generic message with id %s to recipient %s" % (messageId, recipientId)
 
