@@ -126,21 +126,21 @@ def foursquareCheckin(request):
             }
 
         if messageData:
-            try:
-                messageId = callSendAPI(messageData)
-                #messageId = sendMessenger(recipientId=ai_facebook.external_user_id, messageText=message)
-                if messageId:
-                    if '.' and ':' in messageId:
-                        messageId = messageId.split('.')[1].split(':')[0]
-                    giftedMoment.fbm_message_id = messageId
-                    giftedMoment.fbm_sent_status = True
-                    giftedMoment.fbm_message_sent_at = timezone.now()
-                    giftedMoment.save()
-                else:
-                    print "No messageId returned, delivery must have failed."
-            except:
-                print "Error calling callSendAPI()"
-                return HttpResponse(status=201)
+            #try:
+            messageId = callSendAPI(messageData)
+            #messageId = sendMessenger(recipientId=ai_facebook.external_user_id, messageText=message)
+            if messageId:
+                if '.' and ':' in messageId:
+                    messageId = messageId.split('.')[1].split(':')[0]
+                giftedMoment.fbm_message_id = messageId
+                giftedMoment.fbm_sent_status = True
+                giftedMoment.fbm_message_sent_at = timezone.now()
+                giftedMoment.save()
+            else:
+                print "No messageId returned, delivery must have failed."
+            #except:
+                #print "Error calling callSendAPI()"
+                #return HttpResponse(status=201)
         else:
             print "messageData not successfully formed."
     else:
