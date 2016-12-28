@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Integration, Module, ActiveIntegration, GiftedMoment
-from .messenger_views import sendMessenger
+from .messenger_views import sendMessenger, callSendAPI
 
 
 @csrf_exempt
@@ -139,6 +139,7 @@ def foursquareCheckin(request):
                 else:
                     print "No messageId returned, delivery must have failed."
             except:
+				print "Error calling callSendAPI()"
                 return HttpResponse(status=201)
         else:
             print "messageData not successfully formed."
@@ -147,6 +148,7 @@ def foursquareCheckin(request):
             sendMessenger(recipientId=ai_facebook.external_user_id,
                           messageText="Nice checkin at %s!" % venueName)
         except:
+			print "Error calling sendMessenger()"
             return HttpResponse(status=201)
 
     return HttpResponse(status=201)
