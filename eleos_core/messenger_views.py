@@ -209,6 +209,10 @@ def receivedPostback(event):
     elif payload == 'bad_moment':
         sendMessenger(
             senderId, "Apologies.  I'll save this for a better time.")
+
+        # fetch original GiftedMoment by FBM Message ID and nullify sent status
+        print event
+
         return
     elif payload.startswith('thank_'):
         username = payload.strip('thank_')
