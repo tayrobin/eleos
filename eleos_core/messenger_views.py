@@ -206,6 +206,14 @@ def receivedPostback(event):
         showModules(senderId, ai_fb.user)
     elif payload == 'show_integrations':
         showIntegrations(senderId, ai_fb.user)
+    elif payload == 'bad_moment':
+        sendMessenger(
+            senderId, "Apologies.  I'll save this for a better time.")
+        return
+    elif payload.startswith('thank_'):
+        username = payload.strip('thank_')
+        sendMessenger(senderId, "Fantastic!  I'll let %(username)s know." % {
+                      'username': username})
     else:
         sendMessenger(senderId, "Postback called")
         return
@@ -214,31 +222,31 @@ def receivedPostback(event):
 def sendHelpMessage(recipientId, user):
 
     messageData = {
-                    "recipient":{
-                        "id":recipientId
-                      },
-                      "message":{
-                        "attachment":{
-                          "type":"template",
-                          "payload":{
-                            "template_type":"button",
-                            "text":"Sorry, I didn't understand that.  I'm still being programmed!  Here are some things I can do:",
-                            "buttons":[
-                              {
-                                "type":"postback",
-                                "title":"Show Modules",
-                                "payload":"show_modules"
-                              },
-                              {
-                                "type":"postback",
-                                "title":"Show Integrations",
-                                "payload":"show_integrations"
-                              }
-                            ]
-                          }
+        "recipient": {
+            "id": recipientId
+        },
+        "message": {
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "button",
+                    "text": "Sorry, I didn't understand that.  I'm still being programmed!  Here are some things I can do:",
+                    "buttons": [
+                        {
+                            "type": "postback",
+                            "title": "Show Modules",
+                            "payload": "show_modules"
+                        },
+                        {
+                            "type": "postback",
+                            "title": "Show Integrations",
+                            "payload": "show_integrations"
                         }
-                      }
-                    }
+                    ]
+                }
+            }
+        }
+    }
 
     callSendAPI(messageData)
 
@@ -268,7 +276,8 @@ def dispatch(event):
         elif 'integrations' in message['text'].lower() and ai:
             showIntegrations(senderId, ai.user)
         elif 'thanks' in message['text'].lower() and ai:
-            sendMessenger(senderId, random.choice(["Happy to help.", "My pleasure.", "Anything I can do to help.", "You're welcome!", "My what good manners you have!"]))
+            sendMessenger(senderId, random.choice(
+                ["Happy to help.", "My pleasure.", "Anything I can do to help.", "You're welcome!", "My what good manners you have!"]))
         else:
             sendHelpMessage(senderId, ai.user)
 
@@ -344,7 +353,8 @@ def receiveMessengerWebhook(request):
                         ai_fb = ActiveIntegration.objects.get(
                             external_user_id=event['sender']['id'])
                         print "%s has read my message ID: %s." % (ai_fb.user, event['read']['watermark'])
-                        giftedMoments = GiftedMoment.objects.filter(fbm_message_id=event['read']['watermark'])
+                        giftedMoments = GiftedMoment.objects.filter(
+                            fbm_message_id=event['read']['watermark'])
                         if len(giftedMoments) > 0:
                             if len(giftedMoments) > 1:
                                 print "More than 1 GiftedMoment with this FBM Message ID found."
@@ -379,17 +389,18 @@ def receiveFacebookOAuth(request):
     # send to CODE<-->Auth_Token URL
     integration = get_object_or_404(Integration, name='Facebook')
 
-    response = requests.get(integration.token_url, {"client_id":os.environ['FACEBOOK_APP_ID'],
-                                                    "client_secret":os.environ['FACEBOOK_APP_SECRET'],
-                                                    "code":tempCode,
-                                                    "redirect_uri":"https://eleos-core.herokuapp.com/receive_facebook_oauth"})
+    response = requests.get(integration.token_url, {"client_id": os.environ['FACEBOOK_APP_ID'],
+                                                    "client_secret": os.environ['FACEBOOK_APP_SECRET'],
+                                                    "code": tempCode,
+                                                    "redirect_uri": "https://eleos-core.herokuapp.com/receive_facebook_oauth"})
 
     response = response.json()
     access_token = response['access_token']
     print request.user.username, integration.name, access_token
 
     # Create new Link
-    activeIntegration, new = ActiveIntegration.objects.get_or_create(user=request.user, integration=integration)
+    activeIntegration, new = ActiveIntegration.objects.get_or_create(
+        user=request.user, integration=integration)
     if not activeIntegration.access_token:
         activeIntegration.access_token = access_token
         activeIntegration.save()
