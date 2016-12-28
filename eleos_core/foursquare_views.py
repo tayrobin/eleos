@@ -80,7 +80,7 @@ def foursquareCheckin(request):
                                     "buttons": [
                                         {
                                             "type": "postback",
-                                            "title": "Now is not the right Moment",
+                                            "title": "Not a good Moment",
                                             "payload": "bad_moment"
                                         }, {
                                             "type": "postback",
@@ -111,7 +111,7 @@ def foursquareCheckin(request):
                                     "buttons": [
                                         {
                                             "type": "postback",
-                                            "title": "Now is not the right Moment",
+                                            "title": "Not a good Moment",
                                             "payload": "bad_moment"
                                         },
                                         {
