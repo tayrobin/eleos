@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from .models import *
 
 class GiftedMomentAdmin(admin.ModelAdmin):
-    list_display = ('__unicode__', 'fbm_sent_status', 'fbm_read_status', 'fbm_payload_click_status', 'fbm_payload_click_count')
+    list_display = ('__unicode__', 'creator', 'recipient', 'fbm_sent_status', 'fbm_read_status', 'fbm_payload_click_status', 'fbm_payload_click_count')
 
 admin.site.register(Integration)
 admin.site.register(Module)
