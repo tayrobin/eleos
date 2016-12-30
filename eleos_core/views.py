@@ -2,6 +2,7 @@ import os
 import json
 import requests
 from django.urls import reverse
+from django.utils import timezone
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.http import JsonResponse
@@ -11,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rauth.service import OAuth1Service, OAuth1Session
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Integration, Module, ActiveIntegration, OAuthCredentials, Payload
+from .models import Integration, Module, ActiveIntegration, OAuthCredentials, GiftedMoment
 
 
 @login_required()
@@ -85,10 +86,21 @@ def deactivateModule(request, id):
 	return redirect('/modules')
 
 
-def rerouteToPayload(request, id):
-	payload = get_object_or_404(Payload, pk=id)
-	if payload.deliverable_url:
-		return redirect(payload.deliverable_url)
+def deliverGiftedMoment(request, id):
+	giftedMoment = get_object_or_404(GiftedMoment, pk=id)
+
+	# update tracking
+	if not giftedMoment.fbm_payload_click_status:
+		giftedMoment.fbm_payload_click_at = timezone.now()
+		giftedMoment.fbm_payload_click_status = True
+		giftedMoment.fbm_payload_click_count = 1
+		giftedMoment.save()
+	else:
+		giftedMoment.fbm_payload_click_count += 1
+		giftedMoment.save()
+	
+	if giftedMoment.payload.deliverable_url:
+		return redirect(giftedMoment.payload.deliverable_url)
 	else:
 		return redirect('home')
 

@@ -102,6 +102,10 @@ class GiftedMoment(models.Model):
     fbm_read_status = models.BooleanField(default=False, editable=False)
     fbm_message_read_at = models.DateTimeField(
         default=None, editable=False, null=True)
+    fbm_payload_click_at = models.DateTimeField(
+        default=None, editable=False, null=True)
+    fbm_payload_click_status = models.BooleanField(default=False, editable=False)
+    fbm_payload_click_count = models.IntegerField(default=0, editable=False)
 
     CONTEXT_CHOICES = (
         ('PRD', 'Productivity'),

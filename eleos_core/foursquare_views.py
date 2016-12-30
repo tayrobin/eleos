@@ -72,8 +72,7 @@ def foursquareCheckin(request):
                                     "subtitle": giftedMoment.endorsement,
                                     "default_action": {
                                         "type": "web_url",
-                                        #"url": giftedMoment.payload.deliverable_url,
-                                        "url": "https://eleos-core.herokuapp.com/payload/"+str(giftedMoment.payload.id),
+                                        "url": "https://eleos-core.herokuapp.com/deliver_gifted_moment/"+str(giftedMoment.id),
                                         "messenger_extensions": True,
                                         "webview_height_ratio": "tall",
                                         "fallback_url": "https://eleos-core.herokuapp.com"
@@ -82,7 +81,7 @@ def foursquareCheckin(request):
                                         {
                                             "type": "postback",
                                             "title": "Not a good Moment",
-                                            "payload": "bad_moment"
+                                            "payload": "bad_moment_"+str(giftedMoment.id)
                                         }, {
                                             "type": "postback",
                                             "title": "Thank %(creator)s" % {'creator': giftedMoment.creator},
@@ -113,7 +112,7 @@ def foursquareCheckin(request):
                                         {
                                             "type": "postback",
                                             "title": "Not a good Moment",
-                                            "payload": "bad_moment"
+                                            "payload": "bad_moment_"+str(giftedMoment.id)
                                         },
                                         {
                                             "type": "postback",
