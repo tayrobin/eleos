@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rauth.service import OAuth1Service, OAuth1Session
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Integration, Module, ActiveIntegration, OAuthCredentials
+from .models import Integration, Module, ActiveIntegration, OAuthCredentials, Payload
 
 
 @login_required()
@@ -83,6 +83,14 @@ def deactivateModule(request, id):
 		module.users.remove(request.user)
 
 	return redirect('/modules')
+
+
+def rerouteToPayload(request, id):
+	payload = get_object_or_404(Payload, pk=id)
+	if payload.deliverable_url:
+		return redirect(payload.deliverable_url)
+	else:
+		return redirect('home')
 
 
 def sendOAuth(request, integrationName):

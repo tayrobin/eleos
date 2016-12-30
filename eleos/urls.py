@@ -33,6 +33,9 @@ urlpatterns = [
     url(r'^delete_active_integration/(?P<name>\w+)/$',  eleos_core.views.deleteActiveIntegration, name="deleteActiveIntegration"),
     url(r'^sendOAuth/(?P<integrationName>[\w]+)/$',     eleos_core.views.sendOAuth, name='sendOAuth'),
 
+    # payload management
+    url(r'^payload/(?P<id>\d+)/$',                      eleos_core.views.rerouteToPayload, name='rerouteToPayload'),
+
     # foursquare/swarm
     url(r'^foursquare_checkin/$',                       eleos_core.foursquare_views.foursquareCheckin, name='foursquareCheckin'),
     url(r'^receiveOAuth/$',                             eleos_core.foursquare_views.receiveFoursquareOAuth, name='receiveOAuth'),
