@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import random
 import requests
 from django.urls import reverse
@@ -54,6 +55,13 @@ def foursquareCheckin(request):
 
     # deliver Moment (or generic response)
     if giftedMoments:
+
+        # add random delay for testing
+        if random.random() > 0.70:
+            delay = random.uniform(1.0,10.0)
+            print "delaying for %s seconds" % delay
+            time.sleep(delay)
+
         giftedMoment = random.choice(giftedMoments)
         messageData = None
         if giftedMoment.payload.deliverable_url:
