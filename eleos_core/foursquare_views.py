@@ -74,7 +74,7 @@ def foursquareCheckin(request):
                                     "subtitle": giftedMoment.endorsement,
                                     "default_action": {
                                         "type": "web_url",
-                                        "url": "https://eleos-core.herokuapp.com/deliver_gifted_moment/"+str(giftedMoment.id),
+                                        "url": "https://eleos-core.herokuapp.com/deliver_gifted_moment/"+str(giftedMoment.id)+"/",
                                         "messenger_extensions": True,
                                         "webview_height_ratio": "tall",
                                         "fallback_url": "https://eleos-core.herokuapp.com"
