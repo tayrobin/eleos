@@ -1,5 +1,6 @@
 import os
 import json
+import random
 import requests
 from django.urls import reverse
 from django.utils import timezone
@@ -48,11 +49,12 @@ def foursquareCheckin(request):
         print "Looks like %s hasn't given permission for FBM." % ai_swarm.user
         return HttpResponse(status=201)
 
-    giftedMoment = GiftedMoment.objects.filter(
-        recipient=ai_swarm.user, fbm_message_id=None).first()
+    giftedMoments = GiftedMoment.objects.filter(
+        recipient=ai_swarm.user, fbm_message_id=None)
 
     # deliver Moment (or generic response)
-    if giftedMoment:
+    if giftedMoments:
+        giftedMoment = random.choice(giftedMoments)
         messageData = None
         if giftedMoment.payload.deliverable_url:
             # send as attachment
