@@ -1,2 +1,2 @@
 web: gunicorn eleos.wsgi --log-file -
-worker: celery worker --app=eleos -E
+worker: celery worker --app=eleos -E --loglevel=info
