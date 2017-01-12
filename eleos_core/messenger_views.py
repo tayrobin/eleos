@@ -53,6 +53,9 @@ def sendMessenger(recipientId, messageText):
 @shared_task
 def showModules(recipientId, user):
 
+    if type(user) is int:
+        user = get_object_or_404(User, pk=user)
+
     availableModules = Module.objects.all()
     messageData = {"recipient": {"id": recipientId},
                    'message': {
@@ -89,6 +92,9 @@ def showModules(recipientId, user):
 
 @shared_task
 def showIntegrations(recipientId, user):
+
+    if type(user) is int:
+        user = get_object_or_404(User, pk=user)
 
     availableIntegrations = Integration.objects.all()
     messageData = {"recipient": {"id": recipientId},
@@ -222,9 +228,9 @@ def receivedPostback(event):
                                         " successfully deactivated."])
         return
     elif payload == 'show_modules':
-        showModules.apply_async(args=[senderId, ai_fb.user])
+        showModules.apply_async(args=[senderId, ai_fb.user.id])
     elif payload == 'show_integrations':
-        showIntegrations.apply_async(args=[senderId, ai_fb.user])
+        showIntegrations.apply_async(args=[senderId, ai_fb.user.id])
     elif payload.startswith('bad_moment_'):
         sendMessenger.apply_async(
             args=[senderId, "Apologies.  I'll save this for a better time."])
@@ -248,6 +254,9 @@ def receivedPostback(event):
 
 @shared_task
 def sendHelpMessage(recipientId, user):
+
+    if type(user) is int:
+        user = get_object_or_404(User, pk=user)
 
     messageData = {
         "recipient": {
@@ -302,14 +311,14 @@ def dispatch(event):
     if 'text' in message:
 
         if 'modules' in message['text'].lower() and ai:
-            showModules.apply_async(args=[senderId, ai.user])
+            showModules.apply_async(args=[senderId, ai.user.id])
         elif 'integrations' in message['text'].lower() and ai:
-            showIntegrations.apply_async(args=[senderId, ai.user])
+            showIntegrations.apply_async(args=[senderId, ai.user.id])
         elif 'thank' in message['text'].lower() and ai:
             sendMessenger.apply_async(args=[senderId, random.choice(
                 ["Happy to help.", "My pleasure.", "Anything I can do to help.", "You're welcome!", "My what good manners you have!"])])
         else:
-            sendHelpMessage.apply_async(args=[senderId, ai.user])
+            sendHelpMessage.apply_async(args=[senderId, ai.user.id])
 
     elif 'attachments' in message:
         sendMessenger.apply_async(
@@ -339,7 +348,7 @@ def newMessengerUser(event):
         # ONBOARDING
         sendMessenger.apply_async(
             args=[senderId, "Welcome to Eleos! We're here to serve you.  Please pick a Module to get started:"])
-        showModules.apply_async(args=[senderId, user])
+        showModules.apply_async(args=[senderId, user.id])
         return
     else:
         # already existed
