@@ -2,20 +2,26 @@ import os
 import json
 import uuid
 import random
+import logging
 import requests
+from celery import shared_task
 from django.http import HttpResponse
 from .messenger_views import sendMessenger
 from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import ActiveIntegration, Integration, Module
 
+logging.basicConfig(
+    format='[%(asctime)s] [%(levelname)s] %(message)s', level=logging.INFO)
+
 
 @csrf_exempt
+@shared_task
 def refreshAuthToken(access_token):
 
-    print "refreshing auth token"
+    logging.info("refreshing auth token")
 
     refreshUrl = "https://www.googleapis.com/oauth2/v4/token"  # POST
 
@@ -25,16 +31,6 @@ def refreshAuthToken(access_token):
         ActiveIntegration, access_token=access_token)
     refresh_token = ai_gcal.refresh_token
 
-    '''
-	else:
-		print "error retrieving refresh_token from server for access_token: %s"%access_token
-		print "need the user to re-auth calendar access"
-		# really I should be using a specific param to ask for new refresh_token as well..
-		# set prompt=consent in the offline access step
-		# (https://developers.google.com/identity/protocols/OAuth2WebServer#refresh)
-		return render('google-auth.html')
-	'''
-
     response = requests.post(refreshUrl, data={'client_id': os.environ['CALENDAR_CLIENT_ID'], 'client_secret': os.environ[
                              'CALENDAR_CLIENT_SECRET'], 'refresh_token': refresh_token, 'grant_type': 'refresh_token'})
     if response.status_code == 200:
@@ -43,32 +39,37 @@ def refreshAuthToken(access_token):
         expires_in = newData['expires_in']
         token_type = newData['token_type']
 
+        # queue update task
+        logging.info("Automatically queueing an update of this refresh token.")
+        refreshAuthToken.apply_async(args=[access_token], countdown=expires_in)
+
         # now update server
         ai_gcal.access_token = access_token
         ai_gcal.expires_in = expires_in
         ai_gcal.token_type = token_type
         ai_gcal.save()
-        print "new access_token saved!"
+        logging.info("new access_token saved!")
 
         return access_token
 
     else:
-        print "error refreshing token"
-        print "headers: ", response.headers
-        print "text: ", response.text
+        logging.warning("error refreshing token")
+        logging.warning("headers: %s" % response.headers)
+        logging.warning("text: %s" % response.text)
 
 
+@shared_task
 def askWatchCalendar(calendar, access_token):
 
-    print "asking for permission to watch calendar"
+    logging.info("asking for permission to watch calendar")
 
     response = requests.post("https://www.googleapis.com/calendar/v3/calendars/" + calendar + "/events/watch",
                              headers={'Authorization': 'Bearer ' + access_token,
                                       'Content-Type': 'application/json'},
                              data=json.dumps({'id': str(uuid.uuid4()), 'type': 'web_hook', 'address': 'https://eleos-core.herokuapp.com/receive_gcal/'}))
-    print response
+    logging.info(response)
     watchData = response.json()
-    print "watchData: ", watchData
+    logging.info("watchData: %s" % watchData)
 
     if response.status_code == 200:
 
@@ -81,6 +82,7 @@ def askWatchCalendar(calendar, access_token):
         return False, None, None, None
 
 
+@shared_task
 def stopWatchCalendar(user):
 
     i = get_object_or_404(Integration, name="Calendar")
@@ -90,33 +92,34 @@ def stopWatchCalendar(user):
         response = requests.post(stopUri, headers={'Authorization': 'Bearer ' + ai_gcal.access_token, 'Content-Type': 'application/json'},
                                  data=json.dumps({'resourceId': ai_gcal.resource_id, 'id': ai_gcal.resource_uuid}))
         if response.status_code == 200 or response.status_code == 204:
-			try:
-				print "STOP response: ", response.json()
-			except:
-				print "No JSON object in STOP response."
-			return True
+            try:
+                logging.info("STOP response: %s" % response.json())
+            except:
+                logging.warning("No JSON object in STOP response.")
+            return True
         elif response.status_code == 401:
-            print "outdated access_token\nCalling refresh method"
+            logging.info("outdated access_token\nCalling refresh method")
             access_token = refreshAuthToken(ai_gcal.access_token)
             stopWatchCalendar(user)
         else:
-            print "Error"
-            print "Status Code: ", response.status_code
+            logging.info("Error")
+            logging.info("Status Code: %s" % response.status_code)
             try:
-				errorData = response.json()
-				print "STOP response json: ", errorData
-				print "STOP response headers: ", response.headers
+                errorData = response.json()
+                logging.warning("STOP response json: %s" % errorData)
+                logging.warning("STOP response headers: %s" % response.headers)
             except:
                 pass
             return False
     else:
-        print "No GCal ActiveIntegration found for User: %s" % user
+        logging.warning("No GCal ActiveIntegration found for User: %s" % user)
         return False
 
 
+@shared_task
 def getCalendars(access_token):
 
-    print "Fetching Calendars List for user"
+    logging.info("Fetching Calendars List for user")
 
     calendarListUrl = "https://www.googleapis.com/calendar/v3/users/me/calendarList"  # GET
 
@@ -125,7 +128,7 @@ def getCalendars(access_token):
     if response.status_code == 200:
 
         responseData = response.json()
-        print "response: ", responseData
+        logging.info("response: %s" % responseData)
 
         for calendar in responseData['items']:
 
@@ -136,6 +139,7 @@ def getCalendars(access_token):
     return None
 
 
+@shared_task
 def getNewEvents(uri, uuid, resource_id, next_page_token_given=None):
 
     print "Updating Events since last sync"
@@ -156,19 +160,21 @@ def getNewEvents(uri, uuid, resource_id, next_page_token_given=None):
     if response.status_code == 200:
 
         newEvents = response.json()
-        print "newEvents: ", json.dumps(newEvents)
+        logging.info("newEvents: %s" % json.dumps(newEvents))
 
         if 'nextPageToken' in newEvents and newEvents['nextPageToken']:
             next_page_token = newEvents['nextPageToken']
-            print "Have a nextPageToken.. re-calling sync calendar method recursively"
-            getNewEvents(uri, uuid, resource_id, next_page_token)
+            logging.info(
+                "Have a nextPageToken.. re-calling sync calendar method recursively")
+            getNewEvents.apply_async(
+                args=[uri, uuid, resource_id, next_page_token])
 
         if 'nextSyncToken' in newEvents:
             next_sync_token = newEvents['nextSyncToken']
-            print "next_sync_token: ", next_sync_token
+            logging.info("next_sync_token: %s" % next_sync_token)
             ai_gcal.next_sync_token = next_sync_token
             ai_gcal.save()
-            print "next_sync_token saved."
+            logging.info("next_sync_token saved.")
 
         if 'items' in newEvents and newEvents['items']:
             if len(newEvents['items']) == 1:
@@ -216,99 +222,100 @@ def getNewEvents(uri, uuid, resource_id, next_page_token_given=None):
                 # organizer: True
 
                 # parse Event Details
-                print "-- Parsing Event Details --"
+                logging.info("-- Parsing Event Details --")
                 # status .. hoping for 'confirmed'
                 try:
                     status = newEvent['status']
-                    print 'status:', status
+                    logging.info('status: %s' % status)
                 except:
                     status = None
                 # start.dateTime .. timestamp with timezone of start
                 try:
                     startDateTime = newEvent['start']['dateTime']
-                    print 'startDateTime:', startDateTime
+                    logging.info('startDateTime: %s' % startDateTime)
                 except:
                     startDateTime = None
                 # end.dateTime .. timestamp with timezone of end
                 try:
                     endDateTime = newEvent['end']['dateTime']
-                    print 'endDateTime:', endDateTime
+                    logging.info('endDateTime: %s' % endDateTime)
                 except:
                     endDateTime = None
                 # kind .. hoping for 'calendar#event'
                 try:
                     kind = newEvent['kind']
-                    print 'kind:', kind
+                    logging.info('kind: %s' % kind)
                 except:
                     kind = None
                 # summary .. Title of the Event
                 try:
                     eventTitle = newEvent['summary']
-                    print 'eventTitle:', eventTitle
+                    logging.info('eventTitle: %s' % eventTitle)
                 except:
                     eventTitle = None
                 # description .. description of the Event
                 try:
                     description = newEvent['description']
-                    print 'description:', description
+                    logging.info('description: %s' % description)
                 except:
                     description = None
                 # location .. location of the Event
                 try:
                     location = newEvent['location']
-                    print 'location:', location
+                    logging.info('location: %s' % location)
                 except:
                     location = None
                 # id .. ID of the Event
                 try:
                     eventId = newEvent['id']
-                    print 'eventId:', eventId
+                    logging.info('eventId: %s' % eventId)
                 except:
                     eventId = None
                 # htmlLink .. link to the Event
                 try:
                     htmlLink = newEvent['htmlLink']
-                    print 'htmlLink:', htmlLink
+                    logging.info('htmlLink: %s' % htmlLink)
                 except:
                     htmlLink = None
                 # organizer.displayName .. Name of the Person organizing the
                 # Event
                 try:
                     organizerDisplayName = newEvent['organizer']['displayName']
-                    print 'organizerDisplayName:', organizerDisplayName
+                    logging.info('organizerDisplayName: %s' %
+                                 organizerDisplayName)
                 except:
                     organizerDisplayName = None
                 # organizer.self .. Boolean for if I am the person organizing the Event ##
                 # None & False are the same
                 try:
                     organizerIsSelf = newEvent['organizer']['self']
-                    print 'organizerIsSelf:', organizerIsSelf
+                    logging.info('organizerIsSelf: %s' % organizerIsSelf)
                 except:
                     organizerIsSelf = None
                 # organizer.email .. Email of the Person organizing the Event
                 try:
                     organizerEmail = newEvent['organizer']['email']
-                    print 'organizerEmail:', organizerEmail
+                    logging.info('organizerEmail: %s' % organizerEmail)
                 except:
                     organizerEmail = None
                 # I don't know what the difference between an Organizer and a Creator is... ### (creator seems to always be me, organizer is who physically started the event)
                 # creator.displayName .. Name of the Person creating the Event
                 try:
                     creatorDisplayName = newEvent['creator']['displayName']
-                    print 'creatorDisplayName:', creatorDisplayName
+                    logging.info('creatorDisplayName: %s' % creatorDisplayName)
                 except:
                     creatorDisplayName = None
                 # creator.self .. Boolean for if I am the person creating the Event ##
                 # None & False are the same
                 try:
                     creatorIsSelf = newEvent['creator']['self']
-                    print 'creatorIsSelf:', creatorIsSelf
+                    logging.info('creatorIsSelf: %s' % creatorIsSelf)
                 except:
                     creatorIsSelf = None
                 # creator.email .. Email of the Person creating the Event
                 try:
                     creatorEmail = newEvent['creator']['email']
-                    print 'creatorEmail:', creatorEmail
+                    logging.info('creatorEmail: %s' % creatorEmail)
                 except:
                     creatorEmail = None
                 if 'attendees' in newEvent:
@@ -319,7 +326,8 @@ def getNewEvents(uri, uuid, resource_id, next_page_token_given=None):
                                 # declined
                                 try:
                                     responseStatus = person['responseStatus']
-                                    print "responseStatus:", responseStatus
+                                    logging.info("responseStatus: %s" %
+                                                 responseStatus)
                                 except:
                                     responseStatus = None
                 else:
@@ -337,69 +345,75 @@ def getNewEvents(uri, uuid, resource_id, next_page_token_given=None):
                     except:
                         ai_fbm = None
                     if ai_fbm:
-                        sendMessenger(recipientId=ai_fbm.external_user_id,
-                                      messageText=newCalendarEventMessage)
+                        sendMessenger.apply_async(kwargs={'recipientId': ai_fbm.external_user_id,
+                                                          'messageText': newCalendarEventMessage})
                     else:
-                        print "This User has not enabled the Facebook Messenger Integration."
+                        logging.warning(
+                            "This User has not enabled the Facebook Messenger Integration.")
                         return
             else:
-                print "More than 1 new Calendar Event received."
+                logging.warning("More than 1 new Calendar Event received.")
                 return
         else:
-            print "no new events"
+            logging.warning("no new events")
 
     elif response.status_code == 401:
 
-        print "outdated access_token\nCalling refresh method"
+        logging.warning("outdated access_token\nCalling refresh method")
         access_token = refreshAuthToken(access_token)
-        print "have new access_token saved...recursively calling getNewEvents"
-        getNewEvents(uri, uuid, resource_id, next_page_token_given)
+        logging.warning(
+            "have new access_token saved...recursively calling getNewEvents")
+        getNewEvents.apply_async(
+            args=[uri, uuid, resource_id, next_page_token_given])
 
     else:
 
-        print response
-        print "headers: ", response.headers
-        print "text: ", response.text
+        logging.warning(response)
+        logging.warning("headers: %s" % response.headers)
+        logging.warning("text: %s" % response.text)
 
 
 @csrf_exempt
+@shared_task
 def receiveGcal(request):
 
-    print "receiving GCal ping now!"
+    logging.info("receiving GCal ping now!")
 
     headers = request.META
-    print "headers: ", headers
+    logging.info("headers: %s" % headers)
 
     try:
         googleResourceUri = headers['HTTP_X_GOOG_RESOURCE_URI']
-        print "googleResourceUri: ", googleResourceUri
+        logging.info("googleResourceUri: %s" % googleResourceUri)
         googleResourceState = headers['HTTP_X_GOOG_RESOURCE_STATE']
-        print "googleResourceState: ", googleResourceState
+        logging.info("googleResourceState: %s" % googleResourceState)
         googleResourceId = headers['HTTP_X_GOOG_RESOURCE_ID']
-        print "googleResourceId: ", googleResourceId
+        logging.info("googleResourceId: %s" % googleResourceId)
         googleChannelId = headers['HTTP_X_GOOG_CHANNEL_ID']
-        print "googleChannelId: ", googleChannelId
+        logging.info("googleChannelId: %s" % googleChannelId)
         googleMessageNumber = headers['HTTP_X_GOOG_MESSAGE_NUMBER']
-        print "googleMessageNumber: ", googleMessageNumber
+        logging.info("googleMessageNumber: %s" % googleMessageNumber)
     except:
-        print "error parsing Google Resources..."
+        logging.warning("error parsing Google Resources...")
         googleResourceState = 'fail'
 
     if googleResourceState == 'sync':
         # getAllEvents(googleResourceUri, googleChannelId, googleResourceId)
-        print "sync..passing"
+        logging.info("sync..passing")
 
     elif googleResourceState == 'exists':
-        getNewEvents(googleResourceUri, googleChannelId, googleResourceId)
+        getNewEvents.apply_async(
+            args=[googleResourceUri, googleChannelId, googleResourceId])
 
     return HttpResponse("OK")
 
 
 @login_required()
+@shared_task
 def receiveCalendarOAuth(request):
 
     inputs = dict(request.GET)
-    print "inputs: ", inputs
+    logging.info("inputs: %s" % inputs)
 
     tempCode = inputs['code'][0]
 
@@ -411,7 +425,7 @@ def receiveCalendarOAuth(request):
                                                           "code": tempCode,
                                                           "redirect_uri": "https://eleos-core.herokuapp.com/receive_calendar_oauth",
                                                           "grant_type": "authorization_code"})
-    print response.text
+    logging.info(response.text)
     authData = response.json()
     try:
         refreshToken = authData['refresh_token']
@@ -421,7 +435,8 @@ def receiveCalendarOAuth(request):
     expiresIn = authData['expires_in']
     accessToken = authData['access_token']
 
-    print request.user.username, integration.name, accessToken
+    logging.info("%s %s %s" %
+                 (request.user.username, integration.name, accessToken))
 
     # Create new Link
     activeIntegration, new = ActiveIntegration.objects.get_or_create(
@@ -441,7 +456,7 @@ def receiveCalendarOAuth(request):
         activeIntegration.expires_in = expiresIn
         activeIntegration.save()
 
-    print "calling watch calendar method"
+    logging.info("calling watch calendar method")
 
     primaryCalendar = getCalendars(accessToken)
 
@@ -455,7 +470,8 @@ def receiveCalendarOAuth(request):
             activeIntegration.resource_id = resource_id
             activeIntegration.resource_uuid = resource_uuid
             activeIntegration.save()
-            print "%s is now being watched for %s!" % (primaryCalendar, request.user)
+            logging.info("%s is now being watched for %s!" %
+                         (primaryCalendar, request.user))
         else:
             return HttpResponse('There seems to have been an error... Please try again.')
 

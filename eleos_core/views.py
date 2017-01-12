@@ -1,7 +1,8 @@
 import os
 import json
-import requests
 import logging
+import requests
+from celery import shared_task
 from django.urls import reverse
 from django.utils import timezone
 from django.shortcuts import render
@@ -15,144 +16,149 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Integration, Module, ActiveIntegration, OAuthCredentials, GiftedMoment
 
-logging.basicConfig(format='[%(asctime)s] [%(levelname)s] %(message)s', level=logging.INFO)
+logging.basicConfig(
+    format='[%(asctime)s] [%(levelname)s] %(message)s', level=logging.INFO)
 
-# logging.info('calling async task')
-# tasks.add.delay(42, 42)
 
 @login_required()
 def listIntegrations(request):
 
-	logging.info("Pinging Taylor.")
-	sendMessenger.apply_async(('1178291472208332', '%s has loaded the Eleos Integrations page.'% request.user), countdown=6)
+    logging.info("Pinging Taylor.")
+    sendMessenger.apply_async(
+        args=['1178291472208332', '%s has loaded the Eleos Integrations page.' % request.user], countdown=6)
 
-	integrations = Integration.objects.all()
+    integrations = Integration.objects.all()
 
-	return render(request, "integrations.html", {"integrations": integrations, 'APP_ID': os.environ['FACEBOOK_APP_ID'], 'PAGE_ID': os.environ['FACEBOOK_PAGE_ID']})
+    return render(request, "integrations.html", {"integrations": integrations, 'APP_ID': os.environ['FACEBOOK_APP_ID'], 'PAGE_ID': os.environ['FACEBOOK_PAGE_ID']})
 
 
 @login_required()
 def listModules(request):
 
-	modules = Module.objects.all()
+    modules = Module.objects.all()
 
-	return render(request, "modules.html", {"modules": modules})
+    return render(request, "modules.html", {"modules": modules})
 
 
 @login_required()
 def deleteActiveIntegration(request, name):
 
-	integration = get_object_or_404(Integration, name=name)
-	activeIntegration = get_object_or_404(
-		ActiveIntegration, integration=integration, user=request.user)
-	if integration.name == 'Calendar':
-		success = stopWatchCalendar(request.user)
-		if success:
-			activeIntegration.delete()
-		else:
-			return redirect('/integrations')
-	else:
-		activeIntegration.delete()
+    integration = get_object_or_404(Integration, name=name)
+    activeIntegration = get_object_or_404(
+        ActiveIntegration, integration=integration, user=request.user)
+    if integration.name == 'Calendar':
+        success = stopWatchCalendar(request.user)
+        if success:
+            activeIntegration.delete()
+        else:
+            return redirect('/integrations')
+    else:
+        activeIntegration.delete()
 
-	return redirect('/integrations')
+    return redirect('/integrations')
 
 
 @login_required()
 def activateModule(request, id):
 
-	module = get_object_or_404(Module, id=id)
+    module = get_object_or_404(Module, id=id)
 
-	if request.user in module.users.all():
-		pass
-	else:
-		for integration in module.required_integrations.all():
-			if request.user not in integration.users.all():
-				return redirect('/integrations')
+    if request.user in module.users.all():
+        pass
+    else:
+        for integration in module.required_integrations.all():
+            if request.user not in integration.users.all():
+                return redirect('/integrations')
 
-		module.users.add(request.user)
+        module.users.add(request.user)
 
-		# send intro message
-		i = Integration.objects.get(name='Facebook')
-		ai = ActiveIntegration.objects.get(user=request.user, integration=i)
-		if ai.external_user_id:
-			sendMessenger(recipientId=ai.external_user_id,
-						  messageText=module.intro_message)
+        # send intro message
+        i = Integration.objects.get(name='Facebook')
+        ai = ActiveIntegration.objects.get(user=request.user, integration=i)
+        if ai.external_user_id:
+            sendMessenger.apply_async(kwargs={'recipientId': ai.external_user_id,
+                                              'messageText': module.intro_message})
 
-	return redirect('/modules')
+    return redirect('/modules')
 
 
 @login_required()
 def deactivateModule(request, id):
 
-	module = get_object_or_404(Module, id=id)
+    module = get_object_or_404(Module, id=id)
 
-	if request.user not in module.users.all():
-		pass
-	else:
-		module.users.remove(request.user)
+    if request.user not in module.users.all():
+        pass
+    else:
+        module.users.remove(request.user)
 
-	return redirect('/modules')
+    return redirect('/modules')
 
 
+@shared_task
 def deliverGiftedMoment(request, id):
-	giftedMoment = get_object_or_404(GiftedMoment, pk=id)
 
-	# update tracking
-	if not giftedMoment.fbm_payload_click_status:
-		giftedMoment.fbm_payload_click_at = timezone.now()
-		giftedMoment.fbm_payload_click_status = True
-		giftedMoment.fbm_payload_click_count = 1
-		giftedMoment.save()
-	else:
-		giftedMoment.fbm_payload_click_count += 1
-		giftedMoment.save()
+    giftedMoment = get_object_or_404(GiftedMoment, pk=id)
 
-	if giftedMoment.payload.deliverable_url:
-		return redirect(giftedMoment.payload.deliverable_url)
-	else:
-		return redirect('home')
+    # update tracking
+    if not giftedMoment.fbm_payload_click_status:
+        giftedMoment.fbm_payload_click_at = timezone.now()
+        giftedMoment.fbm_payload_click_status = True
+        giftedMoment.fbm_payload_click_count = 1
+        giftedMoment.save()
+    else:
+        giftedMoment.fbm_payload_click_count += 1
+        giftedMoment.save()
+
+    if giftedMoment.payload.deliverable_url:
+        return redirect(giftedMoment.payload.deliverable_url)
+    else:
+        return redirect('home')
 
 
 def sendOAuth(request, integrationName):
 
-	integration = get_object_or_404(Integration, name=integrationName)
+    integration = get_object_or_404(Integration, name=integrationName)
 
-	if not integration.auth_url:
-		return redirect('/')
-	else:
-		if integration.name == 'Swarm':
-			return redirect(integration.auth_url + "?" + "client_id=" + os.environ['FOURSQUARE_CLIENT_ID'] +
-							"&" + "response_type=" + "code" +
-							"&" + "redirect_uri=" + "https://eleos-core.herokuapp.com/receiveOAuth")
-		elif integration.name == 'Facebook':
-			return redirect(integration.auth_url + "?" + "app_id=" + os.environ['FACEBOOK_APP_ID'] +
-							"&" + "redirect_uri=" + "https://eleos-core.herokuapp.com/receive_facebook_oauth")
-		elif integration.name == 'Calendar':
-			return redirect(integration.auth_url + "?" + "scope=" + "https://www.googleapis.com/auth/calendar.readonly" +
-							"&" + "client_id=" + os.environ['CALENDAR_CLIENT_ID'] +
-							"&" + "redirect_uri=" + "https://eleos-core.herokuapp.com/receive_calendar_oauth" +
-							"&" + "response_type=" + "code" +
-													"&" + "access_type=" + "offline" +
-													"&" + "prompt=" + "consent")
-		elif integration.name == "Goodreads":
-			goodreads = OAuth1Service(
-				consumer_key=os.environ['GOODREADS_API_KEY'],
-				consumer_secret=os.environ['GOODREADS_CLIENT_SECRET'],
-				name='goodreads',
-				request_token_url='http://www.goodreads.com/oauth/request_token',
-				authorize_url='http://www.goodreads.com/oauth/authorize',
-				access_token_url='http://www.goodreads.com/oauth/access_token',
-				base_url='http://www.goodreads.com/'
-				)
+    if not integration.auth_url:
+        return redirect('/')
+    else:
+        if integration.name == 'Swarm':
+            return redirect(integration.auth_url + "?" + "client_id=" + os.environ['FOURSQUARE_CLIENT_ID'] +
+                            "&" + "response_type=" + "code" +
+                            "&" + "redirect_uri=" + "https://eleos-core.herokuapp.com/receiveOAuth")
+        elif integration.name == 'Facebook':
+            return redirect(integration.auth_url + "?" + "app_id=" + os.environ['FACEBOOK_APP_ID'] +
+                            "&" + "redirect_uri=" + "https://eleos-core.herokuapp.com/receive_facebook_oauth")
+        elif integration.name == 'Calendar':
+            return redirect(integration.auth_url + "?" + "scope=" + "https://www.googleapis.com/auth/calendar.readonly" +
+                            "&" + "client_id=" + os.environ['CALENDAR_CLIENT_ID'] +
+                            "&" + "redirect_uri=" + "https://eleos-core.herokuapp.com/receive_calendar_oauth" +
+                            "&" + "response_type=" + "code" +
+                            "&" + "access_type=" + "offline" +
+                            "&" + "prompt=" + "consent")
+        elif integration.name == "Goodreads":
+            goodreads = OAuth1Service(
+                consumer_key=os.environ['GOODREADS_API_KEY'],
+                consumer_secret=os.environ['GOODREADS_CLIENT_SECRET'],
+                name='goodreads',
+                request_token_url='http://www.goodreads.com/oauth/request_token',
+                authorize_url='http://www.goodreads.com/oauth/authorize',
+                access_token_url='http://www.goodreads.com/oauth/access_token',
+                base_url='http://www.goodreads.com/'
+            )
 
-			# head_auth=True is important here; this doesn't work with oauth2 for some reason
-			request_token, request_token_secret = goodreads.get_request_token(header_auth=True)
-			oAuthCredentials, new = OAuthCredentials.objects.get_or_create(request_token=request_token, request_token_secret=request_token_secret)
+            # head_auth=True is important here; this doesn't work with oauth2
+            # for some reason
+            request_token, request_token_secret = goodreads.get_request_token(
+                header_auth=True)
+            oAuthCredentials, new = OAuthCredentials.objects.get_or_create(
+                request_token=request_token, request_token_secret=request_token_secret)
 
-			if new:
-				authorize_url = goodreads.get_authorize_url(request_token)
-				return redirect(authorize_url)
-			else:
-				return redirect('/integrations')
-		else:
-			return redirect(integration.auth_url)  # ++ params
+            if new:
+                authorize_url = goodreads.get_authorize_url(request_token)
+                return redirect(authorize_url)
+            else:
+                return redirect('/integrations')
+        else:
+            return redirect(integration.auth_url)  # ++ params
