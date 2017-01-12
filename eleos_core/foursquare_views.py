@@ -172,7 +172,7 @@ def foursquareCheckin(request):
         return HttpResponse(status=201)
 
     # asynchronously check for and deliver a Moment
-    giveGiftedMoment.apply_async(args=[request.user])
+    giveGiftedMoment.apply_async(args=[ai_facebook.user])
 
     return HttpResponse(status=201)
 
