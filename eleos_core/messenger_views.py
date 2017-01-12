@@ -1,7 +1,9 @@
 import os
 import json
 import random
+import logging
 import requests
+from celery import shared_task
 from django.utils import timezone
 from django.http import HttpResponse
 from django.contrib.auth.models import User
@@ -9,6 +11,8 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from .models import ActiveIntegration, Integration, Module, GiftedMoment
+
+logging.basicConfig(format='[%(asctime)s] [%(levelname)s] %(message)s', level=logging.INFO)
 
 
 def callSendAPI(messageData):
@@ -25,13 +29,14 @@ def callSendAPI(messageData):
 	except:
 		recipientId = None
 		messageId = None
-		print data
+		logging.info( data )
 
-	print "Successfully sent generic message with id %s to recipient %s" % (messageId, recipientId)
+	logging.info( "Successfully sent generic message with id %s to recipient %s" % (messageId, recipientId) )
 
 	return messageId
 
 
+@shared_task
 def sendMessenger(recipientId, messageText):
 
 	messageData = {'recipient': {'id': recipientId},

@@ -10,8 +10,21 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
+from __future__ import absolute_import, unicode_literals
+
 import os
 import urlparse
+
+# Celery settings
+
+CELERY_BROKER_URL = os.environ['REDIS_URL']
+
+#: Only add pickle to this list if your broker is secured
+#: from unwanted access (see userguide/security.html)
+CELERY_ACCEPT_CONTENT = ['json']
+#CELERY_RESULT_BACKEND = 'db+sqlite:///results.sqlite'
+CELERY_TASK_SERIALIZER = 'json'
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,7 +38,7 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 SECRET_KEY = 'zj&*o(n#y!=ai2@kw(e7ag=(5tq=brhdk9-oj9d%l*qs%48-wt'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -34,7 +47,6 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'eleos_core.apps.EleosCoreConfig',
-    #'eleos_core',
     'django_admin_bootstrapped',
     'django.contrib.admin',
     'django.contrib.auth',

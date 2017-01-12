@@ -1,6 +1,8 @@
 import os
 import json
+import tasks
 import requests
+import logging
 from django.urls import reverse
 from django.utils import timezone
 from django.shortcuts import render
@@ -14,9 +16,16 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Integration, Module, ActiveIntegration, OAuthCredentials, GiftedMoment
 
+logging.basicConfig(format='[%(asctime)s] [%(levelname)s] %(message)s', level=logging.INFO)
+
+# logging.info('calling async task')
+# tasks.add.delay(42, 42)
 
 @login_required()
 def listIntegrations(request):
+
+	logging.info("Pinging Taylor.")
+	sendMessenger.apply_async(('1178291472208332', '%s has loaded the Eleos Integrations page.'% request.user), countdown=6)
 
 	integrations = Integration.objects.all()
 
@@ -98,7 +107,7 @@ def deliverGiftedMoment(request, id):
 	else:
 		giftedMoment.fbm_payload_click_count += 1
 		giftedMoment.save()
-	
+
 	if giftedMoment.payload.deliverable_url:
 		return redirect(giftedMoment.payload.deliverable_url)
 	else:
