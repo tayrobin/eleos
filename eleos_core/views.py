@@ -1,6 +1,5 @@
 import os
 import json
-import tasks
 import requests
 import logging
 from django.urls import reverse
