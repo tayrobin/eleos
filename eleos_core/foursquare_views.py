@@ -126,7 +126,7 @@ def giveGiftedMoment(user_id):
 
         if messageData:
             # try:
-            messageId = callSendAPI.apply_async(args=[messageData])
+            messageId = callSendAPI.delay(messageData)
             #messageId = sendMessenger(recipientId=ai_facebook.external_user_id, messageText=message)
             if messageId:
                 if '.' and ':' in messageId:
