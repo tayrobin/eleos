@@ -14,7 +14,9 @@ logging.basicConfig(
 
 
 @shared_task
-def getUsersBooks(activeIntegration):
+def getUsersBooks(activeIntegrationId):
+
+    activeIntegration = get_object_or_404(ActiveIntegration, pk=activeIntegrationId)
 
     new_session = OAuth1Session(
         consumer_key=os.environ['GOODREADS_API_KEY'],
@@ -34,7 +36,9 @@ def getUsersBooks(activeIntegration):
 
 
 @shared_task
-def goodreadsUserId(activeIntegration):
+def goodreadsUserId(activeIntegrationId):
+
+    activeIntegration = get_object_or_404(ActiveIntegration, pk=activeIntegrationId)
 
     new_session = OAuth1Session(
         consumer_key=os.environ['GOODREADS_API_KEY'],
@@ -54,7 +58,7 @@ def goodreadsUserId(activeIntegration):
             activeIntegration.external_user_id = userId
             activeIntegration.save()
 
-            getUsersBooks.apply_async(args=[activeIntegration])
+            getUsersBooks.apply_async(args=[activeIntegration.id])
     except:
         logging.warning("error parsing response userId tree")
         logging.warning(response.text)
@@ -103,7 +107,7 @@ def receiveGoodreadsOAuth(request):
 
     # pull history
     if new:
-        goodreadsUserId.apply_async(args=[activeIntegration])
+        goodreadsUserId.apply_async(args=[activeIntegration.id])
 
     # send back to integrations
     return redirect('/integrations')
