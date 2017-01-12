@@ -21,10 +21,25 @@ logging.basicConfig(
 
 
 @shared_task
-def giveGiftedMoment(request):
+def giveGiftedMoment(user_id):
+
+    user = get_object_or_404(User, id=user_id)
+
+    facebook = Integration.objects.get(name='Facebook')
+
+    # get FBM ActiveIntegration
+    try:
+        ai_facebook = ActiveIntegration.objects.get(
+            user=user, integration=facebook)
+        logging.info(
+            "Now have ActiveIntegration for FBM for %s" % ai_facebook.user)
+    except:
+        logging.warning(
+            "Looks like %s hasn't given permission for FBM." % user)
+        return HttpResponse(status=201)
 
     giftedMoments = GiftedMoment.objects.filter(
-        recipient=ai_swarm.user, fbm_message_id=None)
+        recipient=user, fbm_message_id=None)
 
     # deliver Moment (or generic response)
     if giftedMoments:
@@ -172,7 +187,7 @@ def foursquareCheckin(request):
         return HttpResponse(status=201)
 
     # asynchronously check for and deliver a Moment
-    giveGiftedMoment.apply_async(args=[ai_facebook.user])
+    giveGiftedMoment.apply_async(args=[ai_facebook.user.id])
 
     return HttpResponse(status=201)
 
