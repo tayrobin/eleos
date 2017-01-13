@@ -64,93 +64,57 @@ def giveGiftedMoment(user_id, id=None):
                 logging.warning("Error calling sendMessenger()")
                 return HttpResponse(status=201)
 
-    messageData = None
 
-    if giftedMoment.payload.deliverable_url:
-        # send as attachment
-        messageData = {
-            "recipient": {
-                "id": ai_facebook.external_user_id
-            },
-            "message": {
-                "attachment": {
-                    "type": "template",
-                    "payload": {
-                        "template_type": "generic",
-                        "elements": [
-                            {
-                                "title": '%(creator)s created a %(length)s minute %(context)s Moment for you:' % {'creator': giftedMoment.creator, 'length': giftedMoment.payload.length, 'context': giftedMoment.get_context_display()},
-                                "image_url": giftedMoment.payload.image_url,
-                                "subtitle": giftedMoment.endorsement,
-                                "default_action": {
-                                    "type": "web_url",
-                                    "url": "https://eleos-core.herokuapp.com/deliver_gifted_moment/" + str(giftedMoment.id) + "/",
-                                    "messenger_extensions": True,
-                                    "webview_height_ratio": "tall",
-                                    "fallback_url": "https://eleos-core.herokuapp.com"
-                                },
-                                "buttons": [
-                                    {
-                                        "type": "postback",
-                                        "title": "Not a good Moment",
-                                        "payload": "bad_moment_" + str(giftedMoment.id)
-                                    }, {
-                                        "type": "postback",
-                                        "title": "Thank %(creator)s" % {'creator': giftedMoment.creator},
-                                        "payload": "thank_%(creator)s" % {'creator': giftedMoment.creator}
-                                    }
-                                ]
-                            }
-                        ]
-                    }
+    messageData = {
+        "recipient": {
+            "id": ai_facebook.external_user_id
+        },
+        "message": {
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "generic",
+                    "elements": [
+                        {
+                            "title": '%(creator)s created a %(length)s minute Moment for you:' % {'creator': giftedMoment.creator, 'length': giftedMoment.payload.length},
+                            "image_url": giftedMoment.payload.image_url,
+                            "subtitle": giftedMoment.endorsement,
+                            "default_action": {
+                                "type": "web_url",
+                                "url": "https://eleos-core.herokuapp.com/deliver_gifted_moment/" + str(giftedMoment.id) + "/",
+                                "messenger_extensions": True,
+                                "webview_height_ratio": "tall",
+                                "fallback_url": "https://eleos-core.herokuapp.com"
+                            },
+                            "buttons": [
+                                {
+                                    "type": "postback",
+                                    "title": "Not a good Moment",
+                                    "payload": "bad_moment_" + str(giftedMoment.id)
+                                }, {
+                                    "type": "postback",
+                                    "title": "Thank %(creator)s" % {'creator': giftedMoment.creator},
+                                    "payload": "thank_%(creator)s" % {'creator': giftedMoment.creator}
+                                }
+                            ]
+                        }
+                    ]
                 }
             }
         }
+    }
+
+    messageId = callSendAPI(messageData)
+    if messageId:
+        if '.' and ':' in messageId:
+            messageId = messageId.split('.')[1].split(':')[0]
+        giftedMoment.fbm_message_id = messageId
+        giftedMoment.fbm_sent_status = True
+        giftedMoment.fbm_message_sent_at = timezone.now()
+        giftedMoment.save()
     else:
-        # send as text
-        message = '%(creator)s created a %(length)s minute %(context)s Moment for you:\n"%(endorsement)s"\n%(deliverable)s' % {
-            'creator': giftedMoment.creator, 'length': giftedMoment.payload.length, 'context': giftedMoment.get_context_display(), 'endorsement': giftedMoment.endorsement, 'deliverable': giftedMoment.payload.deliverable}
-        messageData = {
-            "recipient": {
-                "id": ai_facebook.external_user_id
-            },
-            "message": {
-                "attachment": {
-                    "type": "template",
-                            "payload": {
-                                "template_type": "button",
-                                "text": message,
-                                "buttons": [
-                                    {
-                                        "type": "postback",
-                                        "title": "Not a good Moment",
-                                        "payload": "bad_moment_" + str(giftedMoment.id)
-                                    },
-                                    {
-                                        "type": "postback",
-                                        "title": "Thank %(creator)s" % {'creator': giftedMoment.creator},
-                                        "payload": "thank_%(creator)s" % {'creator': giftedMoment.creator}
-                                    }
-                                ]
-                            }
-                }
-            }
-        }
-
-        if messageData:
-            messageId = callSendAPI(messageData)
-            if messageId:
-                if '.' and ':' in messageId:
-                    messageId = messageId.split('.')[1].split(':')[0]
-                giftedMoment.fbm_message_id = messageId
-                giftedMoment.fbm_sent_status = True
-                giftedMoment.fbm_message_sent_at = timezone.now()
-                giftedMoment.save()
-            else:
-                logging.warning(
-                    "No messageId returned, delivery must have failed.")
-        else:
-            logging.warning("messageData not successfully formed.")
+        logging.warning(
+            "No messageId returned, delivery must have failed.")
 
 
 @shared_task

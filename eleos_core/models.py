@@ -186,4 +186,4 @@ class GiftedMoment(models.Model):
         return super(GiftedMoment, self).save(*args, **kwargs)
 
     def __unicode__(self):
-        return "%s recommends %s to %s in %s Moments." % (self.creator, self.payload, self.recipient, self.get_context_display())
+        return "%s recommends %s to %s." % (self.creator, self.payload, self.recipient)
