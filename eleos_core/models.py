@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
+import arrow
 import logging
 import datetime
 from django.db import models
 from django.utils import timezone
+from timezone_field import TimeZoneField
 from django.contrib.auth.models import User
 
 logging.basicConfig(
@@ -124,6 +126,7 @@ class GiftedMoment(models.Model):
     deliver_datetime = models.DateTimeField("Deliver Moment at exactly this date and time.",
                                             blank=True, null=True, default=None
                                             )
+    deliver_time_zone = TimeZoneField(default='US/Pacific', blank=True)
     datetime_task_queued = models.BooleanField(
         default=False, editable=False
     )
@@ -183,8 +186,9 @@ class GiftedMoment(models.Model):
         if self.trigger == 'Datetime' and not self.datetime_task_queued:
             from .foursquare_views import giveGiftedMoment
             logging.info("Queueing Datetime-trigged GiftedMoment.")
+            deliver_time = arrow.get(self.deliver_datetime, self.deliver_time_zone.zone)
             giveGiftedMoment.apply_async(
-                kwargs={'user_id': self.recipient.id, 'id': self.id}, eta=self.deliver_datetime)
+                kwargs={'user_id': self.recipient.id, 'id': self.id}, eta=deliver_time)
             self.datetime_task_queued = True
 
         return super(GiftedMoment, self).save(*args, **kwargs)
