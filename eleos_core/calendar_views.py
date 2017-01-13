@@ -16,9 +16,8 @@ from .models import ActiveIntegration, Integration, Module
 logging.basicConfig(
     format='[%(asctime)s] [%(levelname)s] %(message)s', level=logging.INFO)
 
-
-@csrf_exempt
 @shared_task
+@csrf_exempt
 def refreshAuthToken(access_token):
 
     logging.info("refreshing auth token")
