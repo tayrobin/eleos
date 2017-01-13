@@ -22,7 +22,7 @@ logging.basicConfig(
 
 
 @shared_task
-def giveGiftedMoment(user_id):
+def giveGiftedMoment(user_id, id=None):
 
     user = get_object_or_404(User, id=user_id)
 
@@ -39,90 +39,103 @@ def giveGiftedMoment(user_id):
             "Looks like %s hasn't given permission for FBM." % user)
         return HttpResponse(status=201)
 
-    giftedMoments = GiftedMoment.objects.filter(
-        recipient=user, fbm_message_id=None)
+    if id:
+        giftedMoment = get_object_or_404(GiftedMoment, pk=id)
+    else:
 
-    # deliver Moment (or generic response)
-    if giftedMoments:
+        giftedMoments = GiftedMoment.objects.filter(
+            recipient=user, fbm_message_id=None)
 
-        # add random delay for testing
-        if random.random() > 0.70:
-            delay = random.uniform(1.0, 10.0)
-            logging.warning("delaying for %s seconds" % delay)
-            time.sleep(delay)
+        # deliver Moment (or generic response)
+        if giftedMoments:
 
-        giftedMoment = random.choice(giftedMoments)
-        messageData = None
-        if giftedMoment.payload.deliverable_url:
-            # send as attachment
-            messageData = {
-                "recipient": {
-                    "id": ai_facebook.external_user_id
-                },
-                "message": {
-                    "attachment": {
-                        "type": "template",
-                        "payload": {
-                            "template_type": "generic",
-                            "elements": [
-                                {
-                                    "title": '%(creator)s created a %(length)s minute %(context)s Moment for you:' % {'creator': giftedMoment.creator, 'length': giftedMoment.payload.length, 'context': giftedMoment.get_context_display()},
-                                    "image_url": giftedMoment.payload.image_url,
-                                    "subtitle": giftedMoment.endorsement,
-                                    "default_action": {
-                                        "type": "web_url",
-                                        "url": "https://eleos-core.herokuapp.com/deliver_gifted_moment/" + str(giftedMoment.id) + "/",
-                                        "messenger_extensions": True,
-                                        "webview_height_ratio": "tall",
-                                        "fallback_url": "https://eleos-core.herokuapp.com"
-                                    },
-                                    "buttons": [
-                                        {
-                                            "type": "postback",
-                                            "title": "Not a good Moment",
-                                            "payload": "bad_moment_" + str(giftedMoment.id)
-                                        }, {
-                                            "type": "postback",
-                                            "title": "Thank %(creator)s" % {'creator': giftedMoment.creator},
-                                            "payload": "thank_%(creator)s" % {'creator': giftedMoment.creator}
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
+            # add random delay for testing
+            if random.random() > 0.70:
+                delay = random.uniform(1.0, 10.0)
+                logging.warning("delaying for %s seconds" % delay)
+                time.sleep(delay)
+
+            giftedMoment = random.choice(giftedMoments)
         else:
-            # send as text
-            message = '%(creator)s created a %(length)s minute %(context)s Moment for you:\n"%(endorsement)s"\n%(deliverable)s' % {
-                'creator': giftedMoment.creator, 'length': giftedMoment.payload.length, 'context': giftedMoment.get_context_display(), 'endorsement': giftedMoment.endorsement, 'deliverable': giftedMoment.payload.deliverable}
-            messageData = {
-                "recipient": {
-                    "id": ai_facebook.external_user_id
-                },
-                "message": {
-                    "attachment": {
-                        "type": "template",
-                                "payload": {
-                                    "template_type": "button",
-                                    "text": message,
-                                    "buttons": [
-                                        {
-                                            "type": "postback",
-                                            "title": "Not a good Moment",
-                                            "payload": "bad_moment_" + str(giftedMoment.id)
-                                        },
-                                        {
-                                            "type": "postback",
-                                            "title": "Thank %(creator)s" % {'creator': giftedMoment.creator},
-                                            "payload": "thank_%(creator)s" % {'creator': giftedMoment.creator}
-                                        }
-                                    ]
-                                }
+            try:
+                sendMessenger.apply_async(kwargs={'recipientId': ai_facebook.external_user_id,
+                                                  'messageText': "Nice checkin at %s!" % venueName})
+            except:
+                logging.warning("Error calling sendMessenger()")
+                return HttpResponse(status=201)
+
+    messageData = None
+
+    if giftedMoment.payload.deliverable_url:
+        # send as attachment
+        messageData = {
+            "recipient": {
+                "id": ai_facebook.external_user_id
+            },
+            "message": {
+                "attachment": {
+                    "type": "template",
+                    "payload": {
+                        "template_type": "generic",
+                        "elements": [
+                            {
+                                "title": '%(creator)s created a %(length)s minute %(context)s Moment for you:' % {'creator': giftedMoment.creator, 'length': giftedMoment.payload.length, 'context': giftedMoment.get_context_display()},
+                                "image_url": giftedMoment.payload.image_url,
+                                "subtitle": giftedMoment.endorsement,
+                                "default_action": {
+                                    "type": "web_url",
+                                    "url": "https://eleos-core.herokuapp.com/deliver_gifted_moment/" + str(giftedMoment.id) + "/",
+                                    "messenger_extensions": True,
+                                    "webview_height_ratio": "tall",
+                                    "fallback_url": "https://eleos-core.herokuapp.com"
+                                },
+                                "buttons": [
+                                    {
+                                        "type": "postback",
+                                        "title": "Not a good Moment",
+                                        "payload": "bad_moment_" + str(giftedMoment.id)
+                                    }, {
+                                        "type": "postback",
+                                        "title": "Thank %(creator)s" % {'creator': giftedMoment.creator},
+                                        "payload": "thank_%(creator)s" % {'creator': giftedMoment.creator}
+                                    }
+                                ]
+                            }
+                        ]
                     }
                 }
             }
+        }
+    else:
+        # send as text
+        message = '%(creator)s created a %(length)s minute %(context)s Moment for you:\n"%(endorsement)s"\n%(deliverable)s' % {
+            'creator': giftedMoment.creator, 'length': giftedMoment.payload.length, 'context': giftedMoment.get_context_display(), 'endorsement': giftedMoment.endorsement, 'deliverable': giftedMoment.payload.deliverable}
+        messageData = {
+            "recipient": {
+                "id": ai_facebook.external_user_id
+            },
+            "message": {
+                "attachment": {
+                    "type": "template",
+                            "payload": {
+                                "template_type": "button",
+                                "text": message,
+                                "buttons": [
+                                    {
+                                        "type": "postback",
+                                        "title": "Not a good Moment",
+                                        "payload": "bad_moment_" + str(giftedMoment.id)
+                                    },
+                                    {
+                                        "type": "postback",
+                                        "title": "Thank %(creator)s" % {'creator': giftedMoment.creator},
+                                        "payload": "thank_%(creator)s" % {'creator': giftedMoment.creator}
+                                    }
+                                ]
+                            }
+                }
+            }
+        }
 
         if messageData:
             messageId = callSendAPI(messageData)
@@ -138,13 +151,6 @@ def giveGiftedMoment(user_id):
                     "No messageId returned, delivery must have failed.")
         else:
             logging.warning("messageData not successfully formed.")
-    else:
-        try:
-            sendMessenger.apply_async(kwargs={'recipientId': ai_facebook.external_user_id,
-                                              'messageText': "Nice checkin at %s!" % venueName})
-        except:
-            logging.warning("Error calling sendMessenger()")
-            return HttpResponse(status=201)
 
 
 @csrf_exempt

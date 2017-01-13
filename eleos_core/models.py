@@ -1,8 +1,12 @@
 from __future__ import unicode_literals
+import logging
 import datetime
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
+
+logging.basicConfig(
+    format='[%(asctime)s] [%(levelname)s] %(message)s', level=logging.INFO)
 
 
 class Integration(models.Model):
@@ -75,6 +79,16 @@ class ActiveIntegration(models.Model):
     next_sync_token = models.TextField(
         "A bookmark for Google Calendar events.", blank=True, default=None, null=True)
 
+    def save(self, *args, **kwargs):
+        """On save, if GCal, queue update of access_token."""
+        if self.expires_in:
+            from .calendar_views import refreshAuthToken
+            logging.info(
+                "Automatically queueing an update of this refresh token.")
+            refreshAuthToken.apply_async(
+                args=[self.access_token], countdown=self.expires_in)
+        return super(ActiveIntegration, self).save(*args, **kwargs)
+
     def __unicode__(self):
         return "%s <--> %s" % (self.user.username, self.integration.name)
 
@@ -93,6 +107,51 @@ class GiftedMoment(models.Model):
     payload = models.ForeignKey(Payload)
     endorsement = models.TextField(blank=True, default=None, null=True)
 
+    # trigger
+    TRIGGER_CHOICES = (
+        ('Swarm', 'Swarm Checkin'),
+        # TODO: ('Calendar', 'Calendar Event'),
+        ('Datetime', 'Time & Date')
+    )
+
+    trigger = models.CharField("The event that should trigger delivery of the Moment.",
+                               choices=TRIGGER_CHOICES,
+                               max_length=8,
+                               blank=False,
+                               default='Swarm'
+                               )
+
+    # datetime filters (really just a picker)
+    deliver_datetime = models.DateTimeField("Deliver Moment at exactly this date and time.",
+                                            blank=True, null=True, default=None
+                                            )
+
+    # swarm filters
+    delay = models.IntegerField(
+        "The amount of time, in seconds, to wait after the Checkin before delivering the Moment.", default=0, blank=True)
+
+    VENUE_TYPE_CHOICES = (
+        ('4d4b7104d754a06370d81259', 'Arts & Entertainment'),
+        ('4d4b7105d754a06372d81259', 'College & University'),
+        ('4d4b7105d754a06373d81259', 'Event'),
+        ('4d4b7105d754a06374d81259', 'Food'),
+        ('4d4b7105d754a06376d81259', 'Nightlife Spot'),
+        ('4d4b7105d754a06377d81259', 'Outdoors & Recreation'),
+        ('4d4b7105d754a06375d81259', 'Professional & Other Places'),
+        ('4e67e38e036454776db1fb3a', 'Residence'),
+        ('4d4b7105d754a06378d81259', 'Shop & Service'),
+        ('4d4b7105d754a06379d81259', 'Travel & Transport')
+    )
+
+    venue_type = models.CharField("Only trigger at this type of Checkin.",
+                                  choices=VENUE_TYPE_CHOICES,
+                                  max_length=24,
+                                  blank=True, null=True,
+                                  default=None
+                                  )
+
+    # TODO: calendar filters
+
     # FBM tracking
     fbm_message_id = models.TextField(
         blank=True, default=None, null=True, editable=False)
@@ -104,30 +163,27 @@ class GiftedMoment(models.Model):
         default=None, editable=False, null=True)
     fbm_payload_click_at = models.DateTimeField(
         default=None, editable=False, null=True)
-    fbm_payload_click_status = models.BooleanField(default=False, editable=False)
+    fbm_payload_click_status = models.BooleanField(
+        default=False, editable=False)
     fbm_payload_click_count = models.IntegerField(default=0, editable=False)
-
-    CONTEXT_CHOICES = (
-        ('PRD', 'Productivity'),
-        ('ENT', 'Entertainment'),
-        ('INS', 'Inspiration'),
-        ('EDU', 'Education'),
-    )
-    context = models.CharField(
-        max_length=3,
-        choices=CONTEXT_CHOICES,
-        default='ENT',
-    )
 
     # auto-timestamps
     created_at = models.DateTimeField(editable=False)
     updated_at = models.DateTimeField(editable=False)
 
     def save(self, *args, **kwargs):
-        """On save, update timestamps."""
+        """On save, update timestamps, and queue Datetime-trigged GiftedMoments."""
         if not self.id:
             self.created_at = timezone.now()
         self.updated_at = timezone.now()
+
+        # queue datetime Moments
+        if self.trigger == 'Datetime':
+            from .foursquare_views import giveGiftedMoment
+            logging.info("Queueing Datetime-trigged GiftedMoment.")
+            giveGiftedMoment.apply_async(
+                kwargs={'user_id': self.recipient.id, 'id': self.id}, eta=self.deliver_datetime)
+
         return super(GiftedMoment, self).save(*args, **kwargs)
 
     def __unicode__(self):

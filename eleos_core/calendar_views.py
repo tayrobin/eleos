@@ -39,10 +39,6 @@ def refreshAuthToken(access_token):
         expires_in = newData['expires_in']
         token_type = newData['token_type']
 
-        # queue update task
-        logging.info("Automatically queueing an update of this refresh token.")
-        refreshAuthToken.apply_async(args=[access_token], countdown=expires_in)
-
         # now update server
         ai_gcal.access_token = access_token
         ai_gcal.expires_in = expires_in
