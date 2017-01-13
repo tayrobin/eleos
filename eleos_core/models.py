@@ -124,6 +124,9 @@ class GiftedMoment(models.Model):
     deliver_datetime = models.DateTimeField("Deliver Moment at exactly this date and time.",
                                             blank=True, null=True, default=None
                                             )
+    datetime_task_queued = models.BooleanField(
+        default=False, editable=False
+    )
 
     # swarm filters
     delay = models.IntegerField(
@@ -177,11 +180,12 @@ class GiftedMoment(models.Model):
         self.updated_at = timezone.now()
 
         # queue datetime Moments
-        if self.trigger == 'Datetime':
+        if self.trigger == 'Datetime' and not datetime_task_queued:
             from .foursquare_views import giveGiftedMoment
             logging.info("Queueing Datetime-trigged GiftedMoment.")
             giveGiftedMoment.apply_async(
                 kwargs={'user_id': self.recipient.id, 'id': self.id}, eta=self.deliver_datetime)
+            self.datetime_task_queued = True
 
         return super(GiftedMoment, self).save(*args, **kwargs)
 
