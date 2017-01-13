@@ -368,8 +368,8 @@ def getNewEvents(uri, uuid, resource_id, next_page_token_given=None):
         logging.warning("text: %s" % response.text)
 
 
-@csrf_exempt
 @shared_task
+@csrf_exempt
 def receiveGcal(request):
 
     logging.info("receiving GCal ping now!")
@@ -403,8 +403,8 @@ def receiveGcal(request):
     return HttpResponse("OK")
 
 
-@login_required()
 @shared_task
+@login_required()
 def receiveCalendarOAuth(request):
 
     inputs = dict(request.GET)

@@ -375,8 +375,8 @@ def updatedGiftedMomentReadStatus(event):
         logging.warning("No GiftedMoment with this FBM Message ID found.")
 
 
-@csrf_exempt
 @shared_task
+@csrf_exempt
 def receiveMessengerWebhook(request):
 
     if request.method == 'GET':
@@ -428,8 +428,8 @@ def receiveMessengerWebhook(request):
     return HttpResponse(status=201)
 
 
-@login_required()
 @shared_task
+@login_required()
 def receiveFacebookOAuth(request):
 
     if request.method == 'GET':

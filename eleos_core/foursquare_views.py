@@ -153,8 +153,8 @@ def giveGiftedMoment(user_id, id=None):
             logging.warning("messageData not successfully formed.")
 
 
-@csrf_exempt
 @shared_task
+@csrf_exempt
 def foursquareCheckin(request):
 
     logging.info(request.POST)
@@ -228,8 +228,8 @@ def foursquareDetails(activeIntegration):
     foursquareCheckinHistory.apply_async(args=[activeIntegration])
 
 
-@login_required()
 @shared_task
+@login_required()
 def receiveFoursquareOAuth(request):
 
     # parse CODE
