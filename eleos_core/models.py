@@ -126,7 +126,6 @@ class GiftedMoment(models.Model):
     deliver_datetime = models.DateTimeField("Deliver Moment at exactly this date and time.",
                                             blank=True, null=True, default=None
                                             )
-    deliver_time_zone = TimeZoneField(default='US/Pacific', blank=True)
     datetime_task_queued = models.BooleanField(
         default=False, editable=False
     )
@@ -186,7 +185,8 @@ class GiftedMoment(models.Model):
         if self.trigger == 'Datetime' and not self.datetime_task_queued:
             from .foursquare_views import giveGiftedMoment
             logging.info("Queueing Datetime-trigged GiftedMoment.")
-            deliver_time = arrow.get(self.deliver_datetime, self.deliver_time_zone.zone)
+            # localize to recipient's timezone
+            deliver_time = arrow.get(self.deliver_datetime, self.recipient.residence.home_time_zone.zone)
             giveGiftedMoment.apply_async(
                 kwargs={'user_id': self.recipient.id, 'id': self.id}, eta=deliver_time)
             self.datetime_task_queued = True
@@ -195,3 +195,9 @@ class GiftedMoment(models.Model):
 
     def __unicode__(self):
         return "%s recommends %s to %s." % (self.creator, self.payload, self.recipient)
+
+
+class Residence(models.Model):
+    "Model for extending a User to include their timezone."
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    home_time_zone = TimeZoneField(default='US/Pacific')
