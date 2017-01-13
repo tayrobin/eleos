@@ -180,7 +180,7 @@ class GiftedMoment(models.Model):
         self.updated_at = timezone.now()
 
         # queue datetime Moments
-        if self.trigger == 'Datetime' and not datetime_task_queued:
+        if self.trigger == 'Datetime' and not self.datetime_task_queued:
             from .foursquare_views import giveGiftedMoment
             logging.info("Queueing Datetime-trigged GiftedMoment.")
             giveGiftedMoment.apply_async(
