@@ -30,7 +30,6 @@ class Payload(models.Model):
     image_url = models.TextField(blank=True, default=None, null=True)
     length = models.DurationField(
         "The expected length of time, in seconds, Payload will fill.", blank=True, default=None, null=True)
-    deliverable = models.TextField(blank=True, default=None, null=True)
     deliverable_url = models.TextField(blank=True, default=None, null=True)
 
     class Meta:
