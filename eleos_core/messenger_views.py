@@ -375,7 +375,6 @@ def updatedGiftedMomentReadStatus(event):
         logging.warning("No GiftedMoment with this FBM Message ID found.")
 
 
-@shared_task
 @csrf_exempt
 def receiveMessengerWebhook(request):
 
@@ -410,17 +409,8 @@ def receiveMessengerWebhook(request):
                 elif 'message' in event:
                     dispatch.apply_async(args=[event])
                 elif 'read' in event:
-                    try:
-                        ai_fb = ActiveIntegration.objects.get(
-                            external_user_id=event['sender']['id'])
-                        logging.info("%s has read my message ID: %s." % (
-                            ai_fb.user, event['read']['watermark']))
-
-                        # updated GiftedMoment
-                        updatedGiftedMomentReadStatus.apply_async(args=[event])
-
-                    except:
-                        logging.warning("Message recevied from unknown User.")
+                    # updated GiftedMoment
+                    updatedGiftedMomentReadStatus.apply_async(args=[event])
                 else:
                     logging.warning(
                         "Webhook received unknown event: %s" % event)
@@ -428,7 +418,6 @@ def receiveMessengerWebhook(request):
     return HttpResponse(status=201)
 
 
-@shared_task
 @login_required()
 def receiveFacebookOAuth(request):
 
