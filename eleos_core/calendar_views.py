@@ -44,6 +44,12 @@ def refreshAuthToken(access_token):
         ai_gcal.save()
         logging.info("new access_token saved!")
 
+        # queue refresh of access_token
+        logging.info(
+            "Automatically queueing an update of this access_token.")
+        refreshAuthToken.apply_async(
+            args=[access_token], countdown=int(expires_in))
+
         return access_token
 
     else:

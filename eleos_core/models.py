@@ -80,16 +80,6 @@ class ActiveIntegration(models.Model):
     next_sync_token = models.TextField(
         "A bookmark for Google Calendar events.", blank=True, default=None, null=True)
 
-    def save(self, *args, **kwargs):
-        """On save, if GCal, queue update of access_token."""
-        if self.expires_in:
-            from .calendar_views import refreshAuthToken
-            logging.info(
-                "Automatically queueing an update of this refresh token.")
-            refreshAuthToken.apply_async(
-                args=[self.access_token], countdown=self.expires_in)
-        return super(ActiveIntegration, self).save(*args, **kwargs)
-
     def __unicode__(self):
         return "%s <--> %s" % (self.user.username, self.integration.name)
 
