@@ -23,10 +23,6 @@ logging.basicConfig(
 @login_required()
 def listIntegrations(request):
 
-    logging.info("Pinging Taylor.")
-    sendMessenger.apply_async(
-        args=['1178291472208332', '%s has loaded the Eleos Integrations page.' % request.user], countdown=6)
-
     integrations = Integration.objects.all()
 
     return render(request, "integrations.html", {"integrations": integrations, 'APP_ID': os.environ['FACEBOOK_APP_ID'], 'PAGE_ID': os.environ['FACEBOOK_PAGE_ID']})
