@@ -48,13 +48,6 @@ def giveGiftedMoment(user_id, id=None):
 
         # deliver Moment (or generic response)
         if giftedMoments:
-
-            # add random delay for testing
-            if random.random() > 0.70:
-                delay = random.uniform(1.0, 10.0)
-                logging.warning("delaying for %s seconds" % delay)
-                time.sleep(delay)
-
             giftedMoment = random.choice(giftedMoments)
         else:
             try:
@@ -118,23 +111,12 @@ def giveGiftedMoment(user_id, id=None):
 
 
 @shared_task
-@csrf_exempt
-def foursquareCheckin(request):
-
-    logging.info(request.POST)
-    dataJson = json.loads(dict(request.POST)['checkin'][0])
-    logging.info("dataJson: %s" % dataJson)
-
-    swarmUserId = dataJson['user']['id']
-    venueName = dataJson['venue']['name']
-
-    try:
-        logging.info("@%s went to %s" % (swarmUserId, venueName))
-    except:
-        logging.warning("weird characters in venueName")
+def parseFoursquareCheckin(checkin):
 
     facebook = Integration.objects.get(name='Facebook')
     swarm = Integration.objects.get(name='Swarm')
+
+    swarmUserId = checkin['user']['id']
 
     # get Swarm ActiveIntegration
     try:
@@ -142,21 +124,44 @@ def foursquareCheckin(request):
             external_user_id=swarmUserId, integration=swarm)
     except:
         logging.warning("Unable to find ActiveIntegration for this User.")
-        return HttpResponse(status=201)
+        return
 
-    # get FBM ActiveIntegration
+    venueName = checkin['venue']['name']
+    venueType = 'Food'
+
     try:
-        ai_facebook = ActiveIntegration.objects.get(
-            user=ai_swarm.user, integration=facebook)
-        logging.info(
-            "Now have ActiveIntegrations for both Swarm and FBM for %s" % ai_facebook.user)
+        logging.info("@%s went to %s" % (ai_swarm.user, venueName))
     except:
-        logging.warning(
-            "Looks like %s hasn't given permission for FBM." % ai_swarm.user)
-        return HttpResponse(status=201)
+        logging.warning("weird characters in venueName")
 
-    # asynchronously check for and deliver a Moment
-    giveGiftedMoment.apply_async(args=[ai_facebook.user.id])
+    giftedMomentsList = GiftedMoment.objects.filter(recipient=ai_swarm.user, fbm_message_id=None, trigger='Swarm')
+
+    delivered = False # only deliver 1 GiftedMoment per checkin
+
+    for giftedMoment in giftedMomentsList:
+
+        if not delivered:
+            if giftedMoment.venue_type:
+                venue_type = giftedMoment.get_venue_type_display()
+                if venue_type == venueType:
+                    # asynchronously check for and deliver a Moment
+                    giveGiftedMoment.apply_async(args=[ai_swarm.user.id, giftedMoment.id], countdown=giftedMoment.delay)
+                    delivered = True
+            else:
+                # asynchronously check for and deliver a Moment
+                giveGiftedMoment.apply_async(args=[ai_swarm.user.id, giftedMoment.id], countdown=giftedMoment.delay)
+                delivered = True
+
+
+@csrf_exempt
+def foursquareCheckin(request):
+
+    logging.info(request.POST)
+    dataJson = json.loads(dict(request.POST)['checkin'][0])
+    logging.info("dataJson: %s" % dataJson)
+
+    # handoff to async task
+    parseFoursquareCheckin.apply_async(args=[dataJson])
 
     return HttpResponse(status=201)
 
