@@ -17,7 +17,6 @@ logging.basicConfig(
     format='[%(asctime)s] [%(levelname)s] %(message)s', level=logging.INFO)
 
 @shared_task
-@csrf_exempt
 def refreshAuthToken(access_token):
 
     logging.info("refreshing auth token")
@@ -368,7 +367,6 @@ def getNewEvents(uri, uuid, resource_id, next_page_token_given=None):
         logging.warning("text: %s" % response.text)
 
 
-@shared_task
 @csrf_exempt
 def receiveGcal(request):
 
@@ -403,7 +401,6 @@ def receiveGcal(request):
     return HttpResponse("OK")
 
 
-@shared_task
 @login_required()
 def receiveCalendarOAuth(request):
 

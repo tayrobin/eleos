@@ -95,7 +95,6 @@ def deactivateModule(request, id):
     return redirect('/modules')
 
 
-@shared_task
 def deliverGiftedMoment(request, id):
 
     giftedMoment = get_object_or_404(GiftedMoment, pk=id)
