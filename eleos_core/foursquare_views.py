@@ -127,7 +127,11 @@ def parseFoursquareCheckin(checkin):
         return
 
     venueName = checkin['venue']['name']
-    venueType = 'Food'
+    venueType = ''
+    for cat in checkin['venue']['categories']:
+        if 'primary' in cat:
+            venueType = cat['parents'][0]
+    logging.info("venueType: %s" % venueType)
 
     try:
         logging.info("@%s went to %s" % (ai_swarm.user, venueName))
