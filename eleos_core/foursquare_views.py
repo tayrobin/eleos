@@ -127,16 +127,16 @@ def parseFoursquareCheckin(checkin):
         return
 
     venueName = checkin['venue']['name']
+    logging.info("@%s went to %s" % (ai_swarm.user, venueName))
+
     venueType = ''
     for cat in checkin['venue']['categories']:
-        if 'primary' in cat:
-            venueType = cat['parents'][0]
+        if 'primary' in cat and cat['primary']:
+            if 'parents' in cat and cat['parents'] != []:
+                venueType = cat['parents'][0]
+            else:
+                venueType = cat['name']
     logging.info("venueType: %s" % venueType)
-
-    try:
-        logging.info("@%s went to %s" % (ai_swarm.user, venueName))
-    except:
-        logging.warning("weird characters in venueName")
 
     giftedMomentsList = GiftedMoment.objects.filter(recipient=ai_swarm.user, fbm_message_id=None, trigger='Swarm')
 
