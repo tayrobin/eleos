@@ -28,13 +28,12 @@ def callSendAPI(messageData):
     try:
         recipientId = data['recipient_id']
         messageId = data['message_id']
+        logging.info("Successfully sent generic message with id %s to recipient %s" % (
+            messageId, recipientId))
     except:
         recipientId = None
         messageId = None
         logging.warning(data)
-
-    logging.info("Successfully sent generic message with id %s to recipient %s" % (
-        messageId, recipientId))
 
     return messageId
 
@@ -439,6 +438,7 @@ def receiveFacebookOAuth(request):
                                                     "redirect_uri": "https://eleos-core.herokuapp.com/receive_facebook_oauth"})
 
     response = response.json()
+    logging.info("FBM Code-->Auth Response: %s" % response)
     access_token = response['access_token']
     logging.info("%s %s %s" %
                  (request.user.username, integration.name, access_token))
