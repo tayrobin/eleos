@@ -34,15 +34,20 @@ window.fbAsyncInit = function() {
                     <p class="card-text">{{ integration.description }}</p>
                 </div>
                 <div class="card-block">
-                  {% if user in integration.users.all %}
-                    <a href="{% url 'deleteActiveIntegration' name=integration.name %}" class="btn btn-danger">Turn Off</a>
-                  {% else %}
-                    <a href="{% url 'sendOAuth' integrationName=integration.name %}" class="btn btn-success">Turn On</a>
-                  {% endif %}
                   {% if integration.name == 'Facebook' %}
-                    <div class="fb-send-to-messenger" messenger_app_id="{{ APP_ID }}" page_id="{{ PAGE_ID }}"
-                    data-ref="{{ user.username }}" color="blue" size="standard">
-                    </div>
+                    {% if user in integration.users.all %}
+                      <a href="{% url 'deleteActiveIntegration' name=integration.name %}" class="btn btn-danger">Turn Off</a>
+                    {% else %}
+                      <div class="fb-send-to-messenger" messenger_app_id="{{ APP_ID }}" page_id="{{ PAGE_ID }}"
+                      data-ref="{{ user.username }}" color="blue" size="standard">
+                      </div>
+                    {% endif %}
+                  {% else %}
+                    {% if user in integration.users.all %}
+                      <a href="{% url 'deleteActiveIntegration' name=integration.name %}" class="btn btn-danger">Turn Off</a>
+                    {% else %}
+                      <a href="{% url 'sendOAuth' integrationName=integration.name %}" class="btn btn-success">Turn On</a>
+                    {% endif %}
                   {% endif %}
                 </div>
             </div>
