@@ -26,6 +26,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 # limit number of workers
 CELERY_REDIS_MAX_CONNECTIONS = 20
+CELERY_BROKER_POOL_LIMIT = None
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
