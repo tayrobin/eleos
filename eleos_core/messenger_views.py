@@ -331,6 +331,7 @@ def newMessengerUser(event):
 
     try:
         user = User.objects.get(username=event['optin']['ref'])
+        logging.info("New FBM User %s." % user)
     except:
         user = None
         logging.warning("Unable to fetch User.")
@@ -340,6 +341,7 @@ def newMessengerUser(event):
         user=user, integration=integration)
 
     if not activeIntegration.external_user_id:
+        logging.info("Filling in missing external_user_id (%s) for %s." % (senderId, activeIntegration.user))
         activeIntegration.external_user_id = senderId
         activeIntegration.save()
 
