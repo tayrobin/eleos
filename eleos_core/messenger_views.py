@@ -7,7 +7,7 @@ from celery import shared_task
 from django.utils import timezone
 from django.http import HttpResponse
 from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from .models import ActiveIntegration, Integration, Module, GiftedMoment
