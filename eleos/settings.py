@@ -24,6 +24,8 @@ CELERY_BROKER_URL = os.environ['REDIS_URL']
 CELERY_ACCEPT_CONTENT = ['json']
 #CELERY_RESULT_BACKEND = 'db+sqlite:///results.sqlite'
 CELERY_TASK_SERIALIZER = 'json'
+# limit number of workers
+CELERY_REDIS_MAX_CONNECTIONS = 20
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
