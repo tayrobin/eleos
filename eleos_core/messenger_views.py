@@ -291,6 +291,8 @@ def sendHelpMessage(recipientId, user):
 def dispatch(event):
 
     senderId = event['sender']['id']
+    message = event['message']
+    logging.info(message)
 
     fb = Integration.objects.get(name='Facebook')
 
@@ -300,13 +302,11 @@ def dispatch(event):
     except:
         ai = None
         logging.warning("Unkown FBM User (%s). Sending generic login message." % senderId)
-        sendMessenger.apply_async(args=[senderId, "Hi there!\nI'm not sure we've yet been acquainted.  Would you mind visiting https://eleos-core.herokuapp.com to get set up with an Eleos account?\nI look forward to serving you!"])
-
-    message = event['message']
+        sendMessenger.apply_async(args=[senderId, "Hi there!\nI'm not sure we've yet been acquainted.  Eleos works through Integrations with services you already use.  Would you mind visiting https://eleos-core.herokuapp.com to get set up with an Eleos account?\nI look forward to serving you!"])
+        return
 
     logging.info("Received message from user %s:" %
                  (ai.user if ai else senderId))
-    logging.info(message)
 
     messageId = message['mid']
 
