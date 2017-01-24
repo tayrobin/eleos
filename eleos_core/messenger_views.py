@@ -292,12 +292,15 @@ def dispatch(event):
 
     senderId = event['sender']['id']
 
+    fb = Integration.objects.get(name='Facebook')
+
     try:
-        fb = Integration.objects.get(name='Facebook')
         ai = ActiveIntegration.objects.get(
             external_user_id=senderId, integration=fb)
     except:
         ai = None
+        logging.warning("Unkown FBM User (%s). Sending generic login message." % senderId)
+        sendMessenger.apply_async(args=[senderId, "Hi there!\nI'm not sure we've yet been acquainted.  Would you mind visiting https://eleos-core.herokuapp.com to get set up with an Eleos account?\nI look forward to serving you!"])
 
     message = event['message']
 
