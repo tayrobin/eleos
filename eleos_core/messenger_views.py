@@ -6,6 +6,7 @@ import requests
 from celery import shared_task
 from django.utils import timezone
 from django.http import HttpResponse
+from .slack_views import sendTextToSlack
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.csrf import csrf_exempt
@@ -288,6 +289,27 @@ def sendHelpMessage(recipientId, user):
 
 
 @shared_task
+def messengerLocationAttachment(attachment, senderId, user):
+
+    # parse attributes
+    lat = attachment['payload']['coordinates']['lat']
+    lng = attachment['payload']['coordinates']['long']
+    url = attachment['url']
+    placeName = attachment['title']
+
+    # geocode with Foursquare
+
+    # ping Slack
+    slackMessage = "%(username)s has requested content at <%(url)s|%(placeName)s - (%(lat)s,%(lng)s)>!" % {
+        'username': user.username, 'placeName': placeName, 'url': url, 'lat': lat, 'lng': lng}
+    sendTextToSlack.apply_async(kwargs={'text': slackMessage})
+
+    # respond to user
+    sendMessenger.apply_async(
+        args=[senderId, "I see you're at %s!  Give me just a minute to find you something awesome." % placeName])
+
+
+@shared_task
 def dispatch(event):
 
     senderId = event['sender']['id']
@@ -301,8 +323,10 @@ def dispatch(event):
             external_user_id=senderId, integration=fb)
     except:
         ai = None
-        logging.warning("Unkown FBM User (%s). Sending generic login message." % senderId)
-        sendMessenger.apply_async(args=[senderId, "Hi there!\nI'm not sure we've yet been acquainted.  Eleos works through Integrations with services you already use.  Would you mind visiting https://eleos-core.herokuapp.com to get set up with an Eleos account?\nI look forward to serving you!"])
+        logging.warning(
+            "Unkown FBM User (%s). Sending generic login message." % senderId)
+        sendMessenger.apply_async(
+            args=[senderId, "Hi there!\nI'm not sure we've yet been acquainted.  Eleos works through Integrations with services you already use.  Would you mind visiting https://eleos-core.herokuapp.com to get set up with an Eleos account?\nI look forward to serving you!"])
         return
 
     logging.info("Received message from user %s:" %
@@ -323,8 +347,15 @@ def dispatch(event):
             sendHelpMessage.apply_async(args=[senderId, ai.user.id])
 
     elif 'attachments' in message:
-        sendMessenger.apply_async(
-            args=[senderId, "Message with attachment received"])
+
+        for attachment in message['attachments']:
+            if 'type' in attachment and attachment['type'] == 'location':
+                messengerLocationAttachment.apply_async(
+                    kwargs={'attachment': attachment, 'senderId': senderId, 'user': ai.user})
+            else:
+                # send basic response
+                sendMessenger.apply_async(
+                    args=[senderId, "Message with attachment received"])
 
 
 @shared_task
@@ -344,7 +375,8 @@ def newMessengerUser(event):
         user=user, integration=integration)
 
     if not activeIntegration.external_user_id:
-        logging.info("Filling in missing external_user_id (%s) for %s." % (senderId, activeIntegration.user))
+        logging.info("Filling in missing external_user_id (%s) for %s." %
+                     (senderId, activeIntegration.user))
         activeIntegration.external_user_id = senderId
         activeIntegration.save()
 
