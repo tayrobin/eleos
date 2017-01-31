@@ -31,7 +31,7 @@ def sendPayloadToSlack(payload):
 
     if type(payload) == dict:
         response = requests.post( #os.environ["SLACK_WEBHOOK_URL"], json=payload)
-            'https://slack.com/api/chat.postMessage', json=payload)
+            'https://slack.com/api/chat.postMessage', params=payload, headers={"Content-Type":"application/json"})
     else:
         raise TypeError("Provided payload is not a dictionary.")
 
@@ -46,7 +46,7 @@ def sendPayloadToSlack(payload):
 def sendContentRequestToSlack(text):
 
     payload = {
-        "attachments": [
+        "attachments": json.dumps([
             {
                 "text": text,
                 "fallback": "A User requested content.",
@@ -76,7 +76,7 @@ def sendContentRequestToSlack(text):
                     }
                 ]
             }
-        ], "token":slackTestToken, "channel":requestedMomentsChannel
+        ]), "token":slackTestToken, "channel":requestedMomentsChannel
     }
 
     sendPayloadToSlack.apply_async(kwargs={"payload":payload})
