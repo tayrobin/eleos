@@ -8,12 +8,16 @@ from django.views.decorators.csrf import csrf_exempt
 logging.basicConfig(
     format='[%(asctime)s] [%(levelname)s] %(message)s', level=logging.INFO)
 
+slackTestToken = os.environ["SLACK_TEST_TOKEN"]
+requestedMomentsChannel = "C3Y8PFDCG"
+
 
 @shared_task
 def sendTextToSlack(text):
 
     response = requests.post(
-        os.environ["SLACK_WEBHOOK_URL"], json={"text":text})
+        #os.environ["SLACK_WEBHOOK_URL"], json={"text":text})
+        'https://slack.com/api/chat.postMessage', json={"text":text, "token":slackTestToken, "channel":requestedMomentsChannel})
 
     if response.status_code == 200:
         logging.info("Successfully sent message to Slack.")
@@ -25,7 +29,8 @@ def sendTextToSlack(text):
 def sendPayloadToSlack(payload):
 
     if type(payload) == dict:
-        response = requests.post(os.environ["SLACK_WEBHOOK_URL"], json=payload)
+        response = requests.post( #os.environ["SLACK_WEBHOOK_URL"], json=payload)
+            'https://slack.com/api/chat.postMessage', json=payload)
     else:
         raise TypeError("Provided payload is not a dictionary.")
 
@@ -69,7 +74,7 @@ def sendContentRequestToSlack(text):
                     }
                 ]
             }
-        ]
+        ], "token":slackTestToken, "channel":requestedMomentsChannel
     }
 
     sendPayloadToSlack.apply_async(kwargs={"payload":payload})
@@ -79,8 +84,16 @@ def sendContentRequestToSlack(text):
 def receiveSlackWebhook(request):
 
     if request.method == "POST":
-        logging.info("POST:", request)
+        logging.info("POST:", request.POST)
     else:
-        logging.info("GET:", request)
+        logging.info("GET:", request.GET)
+
+    incomingPost = request.POST
+	print "POST:", incomingPost
+	print "Headers:", request.META
+	payloadString = incomingPost['payload']
+	print "payloadString:", payloadString
+	inputs = json.loads(payloadString)
+	print "json POST['payload'][0]:", inputs
 
     return HttpResponse('OK')
