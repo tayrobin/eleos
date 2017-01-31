@@ -17,21 +17,21 @@ requestedMomentsChannel = "C3Y8PFDCG"
 def sendTextToSlack(text):
 
     response = requests.post(
-        #os.environ["SLACK_WEBHOOK_URL"], json={"text":text})
-        'https://slack.com/api/chat.postMessage', json={"text":text, "token":slackTestToken, "channel":requestedMomentsChannel})
+        os.environ["SLACK_WEBHOOK_URL"], json={"text":text})
+        #'https://slack.com/api/chat.postMessage', json={"text":text, "token":slackTestToken, "channel":requestedMomentsChannel})
 
-    if response.status_code == 200:
-        logging.info("Successfully sent message to Slack.")
-    else:
+    if 'error' in response:
         logging.warning("Error sending message to Slack: %s" % response.text)
+    else:
+        logging.info("Successfully sent message to Slack.")
 
 
 @shared_task
 def sendPayloadToSlack(payload):
 
     if type(payload) == dict:
-        response = requests.post( #os.environ["SLACK_WEBHOOK_URL"], json=payload)
-            'https://slack.com/api/chat.postMessage', params=payload, headers={"Content-Type":"application/json"})
+        response = requests.post( os.environ["SLACK_WEBHOOK_URL"], json=payload)
+            #'https://slack.com/api/chat.postMessage', params=payload, headers={"Content-Type":"application/json"})
     else:
         raise TypeError("Provided payload is not a dictionary.")
 
@@ -46,8 +46,8 @@ def sendPayloadToSlack(payload):
 def sendContentRequestToSlack(text):
 
     payload = {
-        "attachments": json.dumps([
-            {
+        "attachments": json.dumps(
+            [{
                 "text": text,
                 "fallback": "A User requested content.",
                 "callback_id": "content_request",

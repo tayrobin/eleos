@@ -299,10 +299,12 @@ def messengerLocationAttachment(attachment, senderId, username):
 
     # geocode with Foursquare
 
+    # create RequestedMoment
+
     # ping Slack
-    slackMessage = "%(username)s has requested content at <%(url)s|%(placeName)s - (%(lat)s,%(lng)s)>!" % {
+    slackMessage = "%(username)s has requested content at <%(url)s|%(placeName)s - (%(lat)s,%(lng)s)>!\n<https://eleos-core.herokuapp.com/RequestedMoment/id|Click here> to respond with something awesome." % {
         'username': username, 'placeName': placeName, 'url': url, 'lat': lat, 'lng': lng}
-    sendContentRequestToSlack.apply_async(kwargs={'text': slackMessage})
+    sendTextToSlack.apply_async(kwargs={'text': slackMessage})
 
     # respond to user
     sendMessenger.apply_async(
