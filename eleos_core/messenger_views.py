@@ -302,7 +302,7 @@ def messengerLocationAttachment(attachment, senderId, username):
     # ping Slack
     slackMessage = "%(username)s has requested content at <%(url)s|%(placeName)s - (%(lat)s,%(lng)s)>!" % {
         'username': username, 'placeName': placeName, 'url': url, 'lat': lat, 'lng': lng}
-    sendTextToSlack.apply_async(kwargs={'text': slackMessage})
+    sendContentRequestToSlack.apply_async(kwargs={'text': slackMessage})
 
     # respond to user
     sendMessenger.apply_async(

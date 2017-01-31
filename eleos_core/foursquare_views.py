@@ -22,6 +22,12 @@ logging.basicConfig(
 
 
 @shared_task
+def geocodeCoordinates(lat, lng):
+
+    return {'name':'HanaHaus', 'city':'Palo Alto', 'country':'US', 'lat':lat, 'lng':lng}
+
+
+@shared_task
 def giveGiftedMoment(user_id, id=None):
 
     user = get_object_or_404(User, id=user_id)

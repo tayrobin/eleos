@@ -51,6 +51,9 @@ urlpatterns = [
     # goodreads
     url(r'^receive_goodreads_oauth/$',                  eleos_core.goodreads_views.receiveGoodreadsOAuth, name='receiveGoodreadsOAuth'),
 
+    # slack
+    url(r'^receive_slack_webhook/$',                    eleos_core.slack_views.receiveSlackWebhook, name='receiveSlackWebhook'),
+
     # admin stuff
     url(r'^admin/',                                     include(admin.site.urls)),
 ]
