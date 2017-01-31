@@ -6,8 +6,8 @@ import requests
 from celery import shared_task
 from django.utils import timezone
 from django.http import HttpResponse
-from .slack_views import sendTextToSlack
 from django.contrib.auth.models import User
+from .slack_views import sendContentRequestToSlack
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
