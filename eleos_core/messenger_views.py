@@ -351,7 +351,7 @@ def dispatch(event):
         for attachment in message['attachments']:
             if 'type' in attachment and attachment['type'] == 'location':
                 messengerLocationAttachment.apply_async(
-                    kwargs={'attachment': attachment, 'senderId': senderId, 'user': ai.user.username})
+                    kwargs={'attachment': attachment, 'senderId': senderId, 'username': ai.user.username})
             else:
                 # send basic response
                 sendMessenger.apply_async(
