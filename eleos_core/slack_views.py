@@ -35,10 +35,11 @@ def sendPayloadToSlack(payload):
     else:
         raise TypeError("Provided payload is not a dictionary.")
 
-    if response.status_code == 200:
-        logging.info("Successfully sent message to Slack.")
-    else:
+    if 'error' in response:
+        logging.warning(response)
         logging.warning("Error sending message to Slack: %s" % response.text)
+    else:
+        logging.info("Successfully sent message to Slack.")
 
 
 @shared_task
@@ -96,7 +97,7 @@ def receiveSlackWebhook(request):
 
         inputs = json.loads(payloadString)
         logging.info( "json POST['payload'][0]:", inputs )
-        
+
     else:
         logging.info("GET:", request.GET)
 
