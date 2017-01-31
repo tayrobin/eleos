@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 import requests
 from celery import shared_task
@@ -84,16 +85,19 @@ def sendContentRequestToSlack(text):
 def receiveSlackWebhook(request):
 
     if request.method == "POST":
-        logging.info("POST:", request.POST)
+
+        incomingPost = request.POST
+        logging.info("POST:", incomingPost)
+
+        logging.info( "Headers:", request.META )
+
+        payloadString = incomingPost['payload']
+        logging.info( "payloadString:", payloadString )
+
+        inputs = json.loads(payloadString)
+        logging.info( "json POST['payload'][0]:", inputs )
+        
     else:
         logging.info("GET:", request.GET)
-
-    incomingPost = request.POST
-	print "POST:", incomingPost
-	print "Headers:", request.META
-	payloadString = incomingPost['payload']
-	print "payloadString:", payloadString
-	inputs = json.loads(payloadString)
-	print "json POST['payload'][0]:", inputs
 
     return HttpResponse('OK')
