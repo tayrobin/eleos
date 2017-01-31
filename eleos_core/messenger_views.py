@@ -289,7 +289,7 @@ def sendHelpMessage(recipientId, user):
 
 
 @shared_task
-def messengerLocationAttachment(attachment, senderId, user):
+def messengerLocationAttachment(attachment, senderId, username):
 
     # parse attributes
     lat = attachment['payload']['coordinates']['lat']
@@ -301,7 +301,7 @@ def messengerLocationAttachment(attachment, senderId, user):
 
     # ping Slack
     slackMessage = "%(username)s has requested content at <%(url)s|%(placeName)s - (%(lat)s,%(lng)s)>!" % {
-        'username': user.username, 'placeName': placeName, 'url': url, 'lat': lat, 'lng': lng}
+        'username': username, 'placeName': placeName, 'url': url, 'lat': lat, 'lng': lng}
     sendTextToSlack.apply_async(kwargs={'text': slackMessage})
 
     # respond to user
@@ -351,7 +351,7 @@ def dispatch(event):
         for attachment in message['attachments']:
             if 'type' in attachment and attachment['type'] == 'location':
                 messengerLocationAttachment.apply_async(
-                    kwargs={'attachment': attachment, 'senderId': senderId, 'user': ai.user})
+                    kwargs={'attachment': attachment, 'senderId': senderId, 'user': ai.user.username})
             else:
                 # send basic response
                 sendMessenger.apply_async(
