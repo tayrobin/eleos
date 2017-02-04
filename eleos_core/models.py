@@ -223,3 +223,6 @@ class Moment(models.Model):
         self.updated_at = timezone.now()
 
         return super(RequestedMoment, self).save(*args, **kwargs)
+
+    def __unicode__(self):
+        return "%s -- %s -- %s" % (self.user, self.trigger, self.created_at)
