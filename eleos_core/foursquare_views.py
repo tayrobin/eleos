@@ -12,19 +12,42 @@ from django.http import HttpResponse
 from django.http import JsonResponse
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
+from .messenger_views import sendMessenger, callSendAPI
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Integration, Module, ActiveIntegration, GiftedMoment
-from .messenger_views import sendMessenger, callSendAPI
 
 logging.basicConfig(
     format='[%(asctime)s] [%(levelname)s] %(message)s', level=logging.INFO)
 
 
-@shared_task
-def geocodeCoordinates(lat, lng):
+def geocodeCoordinates(lat, lng, name=None):
 
-    return {'name':'HanaHaus', 'city':'Palo Alto', 'country':'US', 'lat':lat, 'lng':lng}
+    bestMatchedLocation = {'name':'HanaHaus', 'city':'Palo Alto', 'country':'US', 'lat':lat, 'lng':lng} # dummy data
+
+    foursquareSearch = "https://api.foursquare.com/v2/venues/search"
+    params = {"client_id": os.environ['FOURSQUARE_CLIENT_ID'], "client_secret": os.environ['FOURSQUARE_CLIENT_SECRET'], "intent": "checkin", "limit": 10, "m": "foursquare", "v": 20170203, "ll": "%s,%s"%(lat,lng), "radius":1000, "query":name}
+    
+    # call API
+    response = requests.get(foursquareSearch, params=params)
+    logging.info( "Foursquare Rate Limit Remaining:", response.headers['x-ratelimit-remaining'] )
+    data = response.json()
+
+    # parse matched locations
+    if response.status_code != 200 or data['meta']['code'] != 200:
+        logging.warning("Error calling Foursquare API:", response.text)
+        raise Exception("Error calling the Foursquare API.")
+    elif 'venues' not in data['response']:
+        raise Exception("No venues returned from Foursquare.")
+    elif data['response']['venues'] == []:
+        raise Exception("No venues found near coordinates (%s, %s)."% (lat, lng))
+    else:
+        possibleVenues = data['response']['venues']
+        # for now, just return the first, seems to be fairly accurate
+        bestMatchedLocation = possibleVenues[0]
+
+    # return best match
+    return bestMatchedLocation
 
 
 @shared_task
@@ -177,7 +200,10 @@ def foursquareCheckin(request):
 
 
 @shared_task
-def foursquareCheckinHistory(activeIntegration):
+def foursquareCheckinHistory(activeIntegrationId):
+
+    # get activeIntegration
+    activeIntegration = get_object_or_404(ActiveIntegration, id=activeIntegrationId)
 
     response = requests.get('https://api.foursquare.com/v2/users/self/checkins', {
                             'oauth_token': activeIntegration.access_token, 'v': '20161212'})
@@ -187,7 +213,10 @@ def foursquareCheckinHistory(activeIntegration):
 
 
 @shared_task
-def foursquareDetails(activeIntegration):
+def foursquareDetails(activeIntegrationId):
+
+    # get activeIntegration
+    activeIntegration = get_object_or_404(ActiveIntegration, id=activeIntegrationId)
 
     # get user profile
     response = requests.get('https://api.foursquare.com/v2/users/self',
@@ -204,10 +233,9 @@ def foursquareDetails(activeIntegration):
         logging.warning("Unable to parse User ID from response.")
 
     # get checkin history
-    foursquareCheckinHistory.apply_async(args=[activeIntegration])
+    foursquareCheckinHistory.apply_async(args=[activeIntegrationId])
 
 
-@shared_task
 @login_required()
 def receiveFoursquareOAuth(request):
 
@@ -234,7 +262,7 @@ def receiveFoursquareOAuth(request):
 
     # pull history
     if new and integration.name == 'Swarm':
-        foursquareDetailsa.apply_async(args=[activeIntegration])
+        foursquareDetails.apply_async(args=[activeIntegration.id])
 
     # send back to integrations
     return redirect('/integrations')

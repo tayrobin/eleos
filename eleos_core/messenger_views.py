@@ -6,10 +6,11 @@ import requests
 from celery import shared_task
 from django.utils import timezone
 from django.http import HttpResponse
-from django.contrib.auth.models import User
 from .slack_views import sendTextToSlack
-from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.models import User
+from .foursquare_views import geocodeCoordinates
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import ActiveIntegration, Integration, Module, GiftedMoment
 
@@ -289,6 +290,21 @@ def sendHelpMessage(recipientId, user):
 
 
 @shared_task
+def fulfillMoment(momentId, username, url, placeName, lat, lng):
+
+    # check for any premade Moments matching current context
+
+    # if any, return all
+
+    # else, ping Slack
+    slackMessage = "%(username)s has requested content at <%(url)s|%(placeName)s - (%(lat)s,%(lng)s)>!\n<https://eleos-core.herokuapp.com/RequestedMoment/id|Click here> to respond with something awesome." % {
+        'username': username, 'placeName': placeName, 'url': url, 'lat': lat, 'lng': lng}
+    sendTextToSlack.apply_async(kwargs={'text': slackMessage})
+
+    # after ~2 minutes, automatically respond that we have nothing, and direct user to nearest premade Moment
+
+
+@shared_task
 def messengerLocationAttachment(attachment, senderId, username):
 
     # parse attributes
@@ -298,17 +314,16 @@ def messengerLocationAttachment(attachment, senderId, username):
     placeName = attachment['title']
 
     # geocode with Foursquare
-
-    # create RequestedMoment
-
-    # ping Slack
-    slackMessage = "%(username)s has requested content at <%(url)s|%(placeName)s - (%(lat)s,%(lng)s)>!\n<https://eleos-core.herokuapp.com/RequestedMoment/id|Click here> to respond with something awesome." % {
-        'username': username, 'placeName': placeName, 'url': url, 'lat': lat, 'lng': lng}
-    sendTextToSlack.apply_async(kwargs={'text': slackMessage})
+    locationDetails = geocodeCoordinates(lat=lat, lng=lng, name=placeName)
 
     # respond to user
     sendMessenger.apply_async(
         args=[senderId, "I see you're at %s!  Give me just a minute to find you something awesome." % placeName])
+
+    # create RequestedMoment
+
+    # async fulfill Moment
+    fulfillMoment.apply_async(kwargs={'momentId':0, 'username':username, 'url':url, 'placeName':placeName, 'lat':lat, 'lng':lng})
 
 
 @shared_task
