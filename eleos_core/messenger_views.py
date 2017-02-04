@@ -324,6 +324,9 @@ def messengerLocationAttachment(attachment, senderId, username):
     sendMessenger.apply_async(
         args=[senderId, "I see you're at %s!  Give me just a minute to find you something awesome." % placeName])
 
+    # get user
+    user = get_object_or_404(User, username=username)
+
     # create Moment
     moment = Moment.objects.create(user=user, trigger='Request', details={'lat':lat, 'lng':lng, 'placeName':placeName, 'url':url, 'foursquareDetails':locationDetails})
 
