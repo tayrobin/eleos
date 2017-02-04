@@ -15,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .messenger_views import sendMessenger, callSendAPI
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Integration, Module, ActiveIntegration, GiftedMoment
+from .models import Integration, Module, ActiveIntegration, GiftedMoment, Moment
 
 logging.basicConfig(
     format='[%(asctime)s] [%(levelname)s] %(message)s', level=logging.INFO)
@@ -167,6 +167,9 @@ def parseFoursquareCheckin(checkin):
             else:
                 venueType = cat['name']
     logging.info("venueType: %s" % venueType)
+
+    # create Moment
+    moment = Moment.objects.create(user=ai_swarm.user, trigger='Swarm', details=checkin)
 
     giftedMomentsList = GiftedMoment.objects.filter(recipient=ai_swarm.user, fbm_message_id=None, trigger='Swarm')
 
