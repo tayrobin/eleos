@@ -8,7 +8,6 @@ from django.utils import timezone
 from django.http import HttpResponse
 from .slack_views import sendTextToSlack
 from django.contrib.auth.models import User
-from .foursquare_views import geocodeCoordinates
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
@@ -306,6 +305,8 @@ def fulfillMoment(momentId, username, url, placeName, lat, lng):
 
 @shared_task
 def messengerLocationAttachment(attachment, senderId, username):
+
+    from .foursquare_views import geocodeCoordinates
 
     # parse attributes
     lat = attachment['payload']['coordinates']['lat']
