@@ -47,6 +47,7 @@ def geocodeCoordinates(lat, lng, name=None):
         bestMatchedLocation = possibleVenues[0]
 
     # return best match
+    logging.info("Best match found:", bestMatchedLocation)
     return bestMatchedLocation
 
 
