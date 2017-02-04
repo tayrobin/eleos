@@ -6,6 +6,7 @@ from django.db import models
 from django.utils import timezone
 from timezone_field import TimeZoneField
 from django.contrib.auth.models import User
+from django.contrib.postgres.fields import JSONField
 
 logging.basicConfig(
     format='[%(asctime)s] [%(levelname)s] %(message)s', level=logging.INFO)
@@ -191,3 +192,34 @@ class Residence(models.Model):
     "Model for extending a User to include their timezone."
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     home_time_zone = TimeZoneField(default='US/Pacific')
+
+
+class Moment(models.Model):
+    """Model for storing all triggered Moments, fulfilled or not."""
+    user = models.ForeignKey(User)
+    
+    TRIGGER_CHOICES = (
+        ('Swarm', 'Swarm Checkin'),
+        # TODO: ('Calendar', 'Calendar Event'),
+        ('Datetime', 'Time & Date'),
+        ('Request', 'Requested Moment')
+    )
+
+    trigger = models.CharField("The event that should trigger delivery of the Moment.",
+                               choices=TRIGGER_CHOICES,
+                               max_length=8,
+                               blank=True,
+                               )
+    details = JSONField(blank=True, default=None, null=True)
+
+    # auto-timestamps
+    created_at = models.DateTimeField(editable=False)
+    updated_at = models.DateTimeField(editable=False)
+
+    def save(self, *args, **kwargs):
+        """On save, update timestamps."""
+        if not self.id:
+            self.created_at = timezone.now()
+        self.updated_at = timezone.now()
+
+        return super(RequestedMoment, self).save(*args, **kwargs)

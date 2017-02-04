@@ -11,7 +11,7 @@ from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import ActiveIntegration, Integration, Module, GiftedMoment
+from .models import ActiveIntegration, Integration, Module, GiftedMoment, Moment
 
 logging.basicConfig(
     format='[%(asctime)s] [%(levelname)s] %(message)s', level=logging.INFO)
@@ -315,13 +315,17 @@ def messengerLocationAttachment(attachment, senderId, username):
     placeName = attachment['title']
 
     # geocode with Foursquare
-    locationDetails = geocodeCoordinates(lat=lat, lng=lng, name=placeName)
+    try:
+        locationDetails = geocodeCoordinates(lat=lat, lng=lng, name=placeName)
+    except:
+        locationDetails = None
 
     # respond to user
     sendMessenger.apply_async(
         args=[senderId, "I see you're at %s!  Give me just a minute to find you something awesome." % placeName])
 
-    # create RequestedMoment
+    # create Moment
+    moment = Moment.objects.create(user=user, trigger='Request', details={'lat':lat, 'lng':lng, 'placeName':placeName, 'url':url, 'foursquareDetails':locationDetails})
 
     # async fulfill Moment
     fulfillMoment.apply_async(kwargs={'momentId':0, 'username':username, 'url':url, 'placeName':placeName, 'lat':lat, 'lng':lng})
