@@ -26,20 +26,20 @@ class MomentForm():
 
     # actually JSON, validated below
     content = forms.CharField(label="Content", required=True,
-                                widget=forms.TextInput(attrs={'class': 'form-control', 'name': 'content'})))
+                                widget=forms.TextInput(attrs={'class': 'form-control', 'name': 'content'}))
 
 
     place_id = forms.IntegerField(label="Place ID", required=False,
-                                widget=forms.NumberInput(attrs={'class': 'form-control', 'name': 'place_id'})))
+                                widget=forms.NumberInput(attrs={'class': 'form-control', 'name': 'place_id'}))
 
     # latlng geography(Point,4326)
     latlng = None
     lat = forms.DecimalField(label="Latitude", required=False,
-                                widget=forms.NumberInput(attrs={'class': 'form-control', 'name': 'lat'})))
+                                widget=forms.NumberInput(attrs={'class': 'form-control', 'name': 'lat'}))
     lng = forms.DecimalField(label="Longitude", required=False,
-                                widget=forms.NumberInput(attrs={'class': 'form-control', 'name': 'lng'})))
+                                widget=forms.NumberInput(attrs={'class': 'form-control', 'name': 'lng'}))
     radius = forms.IntegerField(label="Radius in Meters", required=False,
-                                widget=forms.NumberInput(attrs={'class': 'form-control', 'name': 'radius'})))
+                                widget=forms.NumberInput(attrs={'class': 'form-control', 'name': 'radius'}))
 
     # time_range time without time zone[]
     time_range = None
