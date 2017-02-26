@@ -1,16 +1,16 @@
 import eleos_core.views
+import eleos_core.moment_views
 import eleos_core.calendar_views
+from django.contrib import admin
 import eleos_core.messenger_views
 import eleos_core.goodreads_views
 import eleos_core.foursquare_views
-import eleos_core.moment_views
-from django.contrib import admin
 from django.conf.urls import url, include
-from eleos_core.forms import LoginForm, SignupForm, MomentForm
-from django.contrib.auth import views as auth_views
 from django.views.generic.base import TemplateView
-from django.views.generic.edit import CreateView, DeleteView
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.forms import UserCreationForm
+from django.views.generic.edit import CreateView, DeleteView
+from eleos_core.forms import LoginForm, SignupForm, MomentForm
 
 urlpatterns = [
     # basic

@@ -19,7 +19,8 @@ class SignupForm(UserCreationForm):
     password2 = forms.CharField(label="Password2", required=True,
                                widget=forms.PasswordInput(attrs={'class': 'form-control', 'name': 'password2'}))
 
-class MomentForm(forms.Form):
+'''
+class MomentForm(forms.Form, instance=None):
 
     trigger = forms.CharField(label="Trigger", required=True,
                                 widget=forms.TextInput(attrs={'class': 'form-control', 'name': 'trigger'}))
@@ -58,3 +59,4 @@ class MomentForm(forms.Form):
         except:
             raise forms.ValidationError("Invalid data in jsonfield")
         return jdata
+'''
