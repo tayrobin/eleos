@@ -15,8 +15,8 @@ def createNewMoment(request):
         print "POST request:", request.POST
 
         data = {
-            "trigger": request.POST.get("trigger")[0],
-            "content": request.POST.get("content")[0],
+            "trigger": request.POST.get("trigger"),
+            "content": request.POST.get("content"),
             "lat": request.POST.get("lat"),
             "lng": request.POST.get("lng"),
             "radius": request.POST.get("radius")
