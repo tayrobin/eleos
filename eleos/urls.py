@@ -56,4 +56,8 @@ urlpatterns = [
 
     # admin stuff
     url(r'^admin/',                                     include(admin.site.urls)),
+
+    # moments
+    url(r'^moment/new',                                 CreateView.as_view(template_name='create_moment.html', form_class=MomentForm, success_url='/'), name='new_moment'),
+    url(r'^moment/post',                                eleos_core.moment_views.createNewMoment, name='post_moment_form'),
 ]
