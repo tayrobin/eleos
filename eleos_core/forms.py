@@ -19,7 +19,7 @@ class SignupForm(UserCreationForm):
     password2 = forms.CharField(label="Password2", required=True,
                                widget=forms.PasswordInput(attrs={'class': 'form-control', 'name': 'password2'}))
 
-class MomentForm():
+class MomentForm(forms.Form):
 
     trigger = forms.CharField(label="Trigger", required=True,
                                 widget=forms.TextInput(attrs={'class': 'form-control', 'name': 'trigger'}))

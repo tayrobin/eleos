@@ -5,7 +5,7 @@ from django.http import HttpResponse
 def createNewMoment(request):
 
     if request.method == "POST":
-        print request
+        print "POST request:", request
     else:
         print "Not a POST"
         print request
