@@ -14,11 +14,11 @@ def createNewMoment(request):
         print "POST request:", request.POST
 
         data = {
-            "trigger" = request.POST.get("trigger")[0]
-            "content" = request.POST.get("content")[0]
-            "lat" = request.POST.get("lat")
-            "lng" = request.POST.get("lng")
-            "radius" = request.POST.get("radius")
+            "trigger": request.POST.get("trigger")[0]
+            "content": request.POST.get("content")[0]
+            "lat": request.POST.get("lat")
+            "lng": request.POST.get("lng")
+            "radius": request.POST.get("radius")
         }
 
         for key in data:
@@ -35,5 +35,12 @@ def createNewMoment(request):
 
         conn = psycopg2.connect("postgres://root:BbpVbwuGGjhKaEzf3xJi@eleos-development.crimoo44c8hn.us-east-1.rds.amazonaws.com/eleos_development")
 		cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        insertStatement = "INSERT INTO moments (trigger, content) VALUES (%(trigger)s, %(content)s)"
+
+        cur.execute(insertStatement, {"trigger":data.get("trigger"), "content":data.get("content")})
+        conn.commit()
+
+        print "Inserted successfully!"
 
     return HttpResponse('OK')
