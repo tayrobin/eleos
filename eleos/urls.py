@@ -10,7 +10,7 @@ from django.views.generic.base import TemplateView
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.forms import UserCreationForm
 from django.views.generic.edit import CreateView, DeleteView
-from eleos_core.forms import LoginForm, SignupForm, MomentForm
+from eleos_core.forms import LoginForm, SignupForm
 
 urlpatterns = [
     # basic
