@@ -1,4 +1,5 @@
 import psycopg2
+from django.http import HttpResponse
 
 
 def createNewMoment(request):
@@ -8,3 +9,5 @@ def createNewMoment(request):
     else:
         print "Not a POST"
         print request
+
+    return HttpResponse('OK')
