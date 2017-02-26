@@ -1,5 +1,6 @@
 import json
-import psycopg2, psycopg2.extras
+import psycopg2
+import psycopg2.extras
 from django.http import HttpResponse
 
 
@@ -33,12 +34,14 @@ def createNewMoment(request):
 
         print "Insert Data to Eleos database:", data
 
-        conn = psycopg2.connect("postgres://root:BbpVbwuGGjhKaEzf3xJi@eleos-development.crimoo44c8hn.us-east-1.rds.amazonaws.com/eleos_development")
-		cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        conn = psycopg2.connect(
+            "postgres://root:BbpVbwuGGjhKaEzf3xJi@eleos-development.crimoo44c8hn.us-east-1.rds.amazonaws.com/eleos_development")
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         insertStatement = "INSERT INTO moments (trigger, content) VALUES (%(trigger)s, %(content)s)"
 
-        cur.execute(insertStatement, {"trigger":data.get("trigger"), "content":data.get("content")})
+        cur.execute(insertStatement, {"trigger": data.get(
+            "trigger"), "content": data.get("content")})
         conn.commit()
 
         print "Inserted successfully!"
