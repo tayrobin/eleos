@@ -27,7 +27,7 @@ def createNewMoment(request):
                 data[key] = data[key][0]
 
         try:
-            data["content"] = json.loads(data.get("content"))
+            data["content"] = psycopg2.extras.Json(json.loads(data.get("content")))
         except:
             print "Invalid JSON for Content:", data.get("content")
             return HttpResponse("Invalid JSON for Content")
@@ -38,10 +38,9 @@ def createNewMoment(request):
             "postgres://root:BbpVbwuGGjhKaEzf3xJi@eleos-development.crimoo44c8hn.us-east-1.rds.amazonaws.com/eleos_development")
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        insertStatement = "INSERT INTO moments (trigger, content) VALUES (%(trigger)s, %(content)s)"
+        insertStatement = "INSERT INTO moments (trigger, content, latlng, radius) VALUES (%(trigger)s, %(content)s, ST_SetSRID(ST_MakePoint(%(lng)s, %(lat)s), 4326)::geography, %(radius)s)"
 
-        cur.execute(insertStatement, {"trigger": data.get(
-            "trigger"), "content": psycopg2.extras.Json(data.get("content"))})
+        cur.execute(insertStatement, data})
         conn.commit()
 
         print "Inserted successfully!"
