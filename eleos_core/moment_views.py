@@ -40,7 +40,7 @@ def createNewMoment(request):
 
         insertStatement = "INSERT INTO moments (trigger, content, latlng, radius) VALUES (%(trigger)s, %(content)s, ST_SetSRID(ST_MakePoint(%(lng)s, %(lat)s), 4326)::geography, %(radius)s)"
 
-        cur.execute(insertStatement, data})
+        cur.execute(insertStatement, data)
         conn.commit()
 
         print "Inserted successfully!"
