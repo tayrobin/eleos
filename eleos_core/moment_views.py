@@ -23,13 +23,13 @@ def createNewMoment(request):
         }
 
         for key in data:
-            if key and type(key) == list:
+            if data.get(key) and type(data.get(key)) == list:
                 data[key] = data[key][0]
 
         try:
             data["content"] = json.loads(data.get("content"))
         except:
-            print "Invalid JSON:", data.get("content")
+            print "Invalid JSON for Content:", data.get("content")
             return HttpResponse("Invalid JSON for Content")
 
         print "Insert Data to Eleos database:", data
@@ -41,7 +41,7 @@ def createNewMoment(request):
         insertStatement = "INSERT INTO moments (trigger, content) VALUES (%(trigger)s, %(content)s)"
 
         cur.execute(insertStatement, {"trigger": data.get(
-            "trigger"), "content": data.get("content")})
+            "trigger"), "content": Json(data.get("content"))})
         conn.commit()
 
         print "Inserted successfully!"
