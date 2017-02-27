@@ -41,7 +41,7 @@ def createNewMoment(request):
         insertStatement = "INSERT INTO moments (trigger, content) VALUES (%(trigger)s, %(content)s)"
 
         cur.execute(insertStatement, {"trigger": data.get(
-            "trigger"), "content": Json(data.get("content"))})
+            "trigger"), "content": psycopg2.extras.Json(data.get("content"))})
         conn.commit()
 
         print "Inserted successfully!"
