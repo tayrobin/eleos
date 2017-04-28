@@ -1,5 +1,6 @@
 import eleos_core.views
 import eleos_core.moment_views
+import eleos_core.typeform_views
 import eleos_core.calendar_views
 from django.contrib import admin
 import eleos_core.messenger_views
@@ -61,4 +62,7 @@ urlpatterns = [
     # moments
     url(r'^moment/new',                                 TemplateView.as_view(template_name='create_moment.html'), name='new_moment'),
     url(r'^moment/post',                                eleos_core.moment_views.createNewMoment, name='post_moment_form'),
+
+    # Typeform
+    url(r'^receive_typeform_webhook/$',                 eleos_core.typeform_views.receiveTypeformWebhook, name='receiveTypeformWebhook'),
 ]
