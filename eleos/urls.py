@@ -65,4 +65,5 @@ urlpatterns = [
 
     # Typeform
     url(r'^receive_typeform_webhook/$',                 eleos_core.typeform_views.receiveTypeformWebhook, name='receiveTypeformWebhook'),
+    url(r'^build_moment/$',                             TemplateView.as_view(template_name='moment_builder_typeform.html'), name='build_moment'),
 ]
