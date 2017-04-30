@@ -11,35 +11,37 @@ logging.basicConfig(
 
 slackTestToken = os.environ["SLACK_TEST_TOKEN"]
 requestedMomentsChannel = "C3Y8PFDCG"
+SLACK_WEBHOOK_URL_REQUESTED_MOMENTS = os.environ["SLACK_WEBHOOK_URL_REQUESTED_MOMENTS"]
+SLACK_WEBHOOK_URL_MOMENT_BUILDER = os.environ["SLACK_WEBHOOK_URL_MOMENT_BUILDER"]
 
 
 @shared_task
-def sendTextToSlack(text):
+def sendPayloadToSlack(payload, channel="requested_moments"):
 
-    response = requests.post(
-        os.environ["SLACK_WEBHOOK_URL"], json={"text":text})
-        #'https://slack.com/api/chat.postMessage', json={"text":text, "token":slackTestToken, "channel":requestedMomentsChannel})
-
-    if 'error' in response:
-        logging.warning("Error sending message to Slack: %s" % response.text)
+    if channel == "moment_builder":
+        webhook_url = SLACK_WEBHOOK_URL_MOMENT_BUILDER
     else:
-        logging.info("Successfully sent message to Slack.")
+        webhook_url = SLACK_WEBHOOK_URL_REQUESTED_MOMENTS
 
 
-@shared_task
-def sendPayloadToSlack(payload):
-
-    if type(payload) == dict:
-        response = requests.post( os.environ["SLACK_WEBHOOK_URL"], json=payload)
-            #'https://slack.com/api/chat.postMessage', params=payload, headers={"Content-Type":"application/json"})
-    else:
+    if not isinstance(payload, dict):
         raise TypeError("Provided payload is not a dictionary.")
+    else:
+        response = requests.post(webhook_url, json=payload)
+        #'https://slack.com/api/chat.postMessage', params=payload, headers={"Content-Type":"application/json"})
+
 
     if 'error' in response:
         logging.warning(response)
         logging.warning("Error sending message to Slack: %s" % response.text)
     else:
         logging.info("Successfully sent message to Slack.")
+
+
+@shared_task
+def sendTextToSlack(text, channel="requested_moments"):
+
+    sendPayloadToSlack(payload={"text":text}, channel=channel)
 
 
 @shared_task
