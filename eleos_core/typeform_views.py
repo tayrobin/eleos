@@ -10,6 +10,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from .slack_views import sendTextToSlack
+from .mailchimp_views import handle_user_email
 
 logging.basicConfig(
     format='[%(asctime)s] [%(levelname)s] %(message)s', level=logging.INFO)
@@ -21,13 +22,16 @@ DB_URL = os.environ["DB_URL"]
 def newMomentCreated(moment_data):
 
 	# notify Eleos Team in Slack
-	slackMessage = "A new Moment has been built through Typeform! Huzzah!\nMeet %(author_name)s, who cares about %(recipient_name)s so much, they want to send a Moment on %(date)s.\nLet's not let %(author_name)s down." % {
-		"author_name": moment_data["author_name"], "recipient_name": moment_data["recipient_name"], "date": moment_data["trigger_options"]["time"]}
+	slackMessage = "A new Moment has been built through Typeform! Huzzah!\nMeet %(author_name)s, who cares about %(recipient_name)s so much, they want to send a <%(content_url)s|Moment> on %(date)s.\nLet's not let %(author_name)s down." % {
+		"author_name": moment_data["author_name"], "recipient_name": moment_data["recipient_name"], "content_url":moment_data["content"]["url"], "date": moment_data["trigger_options"]["time"]}
 
 	sendTextToSlack.apply_async(
 		kwargs={"text": slackMessage, "channel": "moment_builder"})
 
+
 	# trigger mailchimp confirmation to Author
+	#handle_user_email.apply_async(kwargs={"email": moment_data["author_email"], "FNAME": moment_data["author_name"]})
+	handle_user_email(email=moment_data["author_email"], FNAME=moment_data["author_name"])
 
 
 @shared_task
