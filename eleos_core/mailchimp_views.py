@@ -1,5 +1,6 @@
 import os
 import logging
+from requests.exceptions import HTTPError
 
 from celery import shared_task
 from mailchimp3 import MailChimp
@@ -19,17 +20,22 @@ client = MailChimp(MAILCHIMP_USERNAME, MAILCHIMP_API_KEY)
 @shared_task
 def subscribe_user_to_list(email, list_id="66add092d7", FNAME=None, LNAME=None):
 
+    merge_fields = {}
+    if FNAME is not None:
+        merge_fields["FNAME"] = FNAME
+    if LNAME is not None:
+        merge_fields["LNAME"] = LNAME
+
     try:
         client.lists.members.create(list_id, {
             "email_address": email,
             "status": "subscribed",
-            "merge_fields": {
-                "FNAME": FNAME,
-                "LNAME": LNAME
-            }
+            "merge_fields" : merge_fields
         })
-    except:
+    except HTTPError as e:
         logging.warning("Unable to add %s to Mailchimp List ID: %s." % (email, list_id))
+        logging.warning(e)
+        logging.warning(e.response.json())
 
 
 def user_in_list(email, list_id="66add092d7"):
