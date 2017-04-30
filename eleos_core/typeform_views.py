@@ -30,8 +30,7 @@ def newMomentCreated(moment_data):
 
 
 	# trigger mailchimp confirmation to Author
-	#handle_user_email.apply_async(kwargs={"email": moment_data["author_email"], "FNAME": moment_data["author_name"]})
-	handle_user_email(email=moment_data["author_email"], FNAME=moment_data["author_name"])
+	handle_user_email.apply_async(kwargs={"email": moment_data["author_email"], "FNAME": moment_data["author_name"]})
 
 
 @shared_task

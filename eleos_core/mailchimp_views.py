@@ -28,7 +28,7 @@ def subscribe_user_to_list(email, list_id="66add092d7", FNAME=None, LNAME=None):
                 "LNAME": LNAME
             }
         })
-    except HTTPError:
+    except:
         logging.warning("Unable to add %s to Mailchimp List ID: %s." % (email, list_id))
 
 
