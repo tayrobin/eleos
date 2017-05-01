@@ -41,7 +41,7 @@ PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 SECRET_KEY = 'zj&*o(n#y!=ai2@kw(e7ag=(5tq=brhdk9-oj9d%l*qs%48-wt'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = (os.environ['DEBUG'] == "True")
 
 ALLOWED_HOSTS = ['*']
 
@@ -50,7 +50,7 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'eleos_core.apps.EleosCoreConfig',
-    'django_celery_beat',
+    #'django_celery_beat',
     'django_admin_bootstrapped',
     'django.contrib.admin',
     'django.contrib.auth',
