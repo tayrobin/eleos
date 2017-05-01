@@ -50,6 +50,7 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'eleos_core.apps.EleosCoreConfig',
+    'django_celery_beat',
     'django_admin_bootstrapped',
     'django.contrib.admin',
     'django.contrib.auth',
