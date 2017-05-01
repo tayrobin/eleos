@@ -7,6 +7,7 @@ celery==4.0.2
 certifi==2016.9.26
 Django==1.10.4
 django-admin-bootstrapped==2.5.7
+django-celery-beat==1.0.1
 django-timezone-field==2.0
 flower==0.9.1
 futures==3.0.5
