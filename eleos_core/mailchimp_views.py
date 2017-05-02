@@ -20,6 +20,9 @@ client = MailChimp(MAILCHIMP_USERNAME, MAILCHIMP_API_KEY)
 @shared_task
 def subscribe_user_to_list(email, list_id="66add092d7", FNAME=None, LNAME=None):
 
+    if (email is None) or (email == "") or (" " in email) or ("@" not in email):
+        raise ValueError("Provided email '%s' is invalid." % email)
+
     merge_fields = {}
     if FNAME is not None:
         merge_fields["FNAME"] = FNAME
@@ -36,6 +39,9 @@ def subscribe_user_to_list(email, list_id="66add092d7", FNAME=None, LNAME=None):
         logging.warning("Unable to add %s to Mailchimp List ID: %s." % (email, list_id))
         logging.warning(e)
         logging.warning(e.response.json())
+    except ValueError as e:
+        logging.warning(e)
+        logging.warning("Email given: %s" % email)
 
 
 def user_in_list(email, list_id="66add092d7"):
@@ -62,6 +68,12 @@ def user_in_list(email, list_id="66add092d7"):
 
 @shared_task
 def handle_user_email(email, FNAME=None, LNAME=None):
+
+    if (email is None) or (email == "") or (" " in email) or ("@" not in email):
+        raise ValueError("Provided email '%s' is invalid." % email)
+
+    if email == "an_account@example.com":
+        return # skip for development
 
     if user_in_list(email):
         logging.info("User already in list, not doing anything for now.")
